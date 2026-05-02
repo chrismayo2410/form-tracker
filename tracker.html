@@ -527,11 +527,7 @@
           <div class="steps-bar"><div class="steps-fill" id="stepsFill" style="width:0%;"></div></div>
         </div>
 
-        <div class="macro-section" style="flex:1;">
-          <div class="section-title">Today's session</div>
-          <div id="workoutDisplay" style="font-size:1.5rem;font-weight:800;color:var(--accent2);margin-bottom:6px;">Rest</div>
-          <div id="activityNotesDisplay" style="font-size:0.8rem;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.6;"></div>
-        </div>
+        <div class="macro-section" id="sessionCard" style="flex:1;"></div>
       </div>
     </div>
 
@@ -545,7 +541,9 @@
           <button class="wtoggle" data-metric="steps" onclick="setWeeklyMetric('steps', this)">Steps</button>
         </div>
       </div>
-      <div class="chart-area" id="weeklyChartArea"></div>
+      <div style="position:relative;height:150px;margin-bottom:1rem;">
+        <canvas id="weeklyChartCanvas"></canvas>
+      </div>
       <div class="weekly-avgs" id="weeklyAvgs"></div>
     </div>
 
@@ -780,8 +778,7 @@ function renderAll() {
   document.getElementById('stepsTargetDisp').textContent = tgt.steps.toLocaleString();
   document.getElementById('stepsFill').style.width = stepsPct + '%';
 
-  document.getElementById('workoutDisplay').textContent = state.workout || 'Rest';
-  document.getElementById('activityNotesDisplay').textContent = state.activityNotes || '';
+  renderSessionCard();
 
   renderFoodLog();
   renderWeeklySummary();
@@ -790,6 +787,7 @@ function renderAll() {
 // ── Weekly summary ────────────────────────────────────────────────────────────
 
 let weeklyMetric = 'kcal';
+let weeklyChartInst = null;
 
 function setWeeklyMetric(metric, btn) {
   weeklyMetric = metric;
@@ -832,42 +830,106 @@ function getWeeklyData() {
 function renderWeeklySummary() {
   const days = getWeeklyData();
   const metric = weeklyMetric;
-  const colorMap = { kcal: 'var(--accent)', protein: '#9ee8a0', steps: 'var(--accent2)' };
+  const colorMap = { kcal: '#c8f060', protein: '#9ee8a0', steps: '#60c8f0' };
   const color = colorMap[metric];
+  const target = { kcal: state.targets.kcal, protein: state.targets.protein, steps: state.targets.steps }[metric];
 
-  const vals = days.map(d => d[metric]);
-  const max = Math.max(...vals, 1);
+  const barColors = days.map(d =>
+    d.isToday ? color : d.hasData ? color + '77' : color + '1a'
+  );
 
-  document.getElementById('weeklyChartArea').innerHTML = days.map(d => {
-    const val = d[metric];
-    const pct = val > 0 ? Math.max(3, Math.round((val / max) * 100)) : 2;
-    const displayVal = val > 0
-      ? (metric === 'steps' ? (val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val) : val)
-      : '';
-    const opacity = d.isToday ? 1 : (d.hasData ? 0.5 : 0.12);
-    return `
-      <div class="chart-col">
-        <div class="chart-val-label" style="color:${color};">${displayVal}</div>
-        <div class="chart-bar-wrap">
-          <div class="chart-bar" style="height:${pct}%;background:${color};opacity:${opacity};"></div>
-        </div>
-        <div class="chart-day-label ${d.isToday ? 'is-today' : ''}">${d.label}</div>
-      </div>`;
-  }).join('');
+  const canvas = document.getElementById('weeklyChartCanvas');
+  if (weeklyChartInst) { weeklyChartInst.destroy(); weeklyChartInst = null; }
 
-  const daysWithKcal = days.filter(d => d.kcal > 0);
-  const daysWithP    = days.filter(d => d.protein > 0);
+  weeklyChartInst = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: days.map(d => d.label.toUpperCase()),
+      datasets: [
+        {
+          data: days.map(d => d[metric]),
+          backgroundColor: barColors,
+          borderRadius: 4,
+          borderSkipped: false,
+          order: 2
+        },
+        {
+          data: Array(7).fill(target),
+          type: 'line',
+          borderColor: color,
+          borderDash: [5, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: false,
+          tension: 0,
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e1e1e',
+          borderColor: '#333',
+          borderWidth: 1,
+          titleColor: '#6b6b6b',
+          bodyColor: '#f0ede8',
+          titleFont: { family: 'DM Mono', size: 10 },
+          bodyFont: { family: 'DM Mono', size: 11 },
+          filter: item => item.datasetIndex === 0,
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              if (!v) return 'No data';
+              if (metric === 'steps') return v >= 1000 ? (v / 1000).toFixed(1) + 'k steps' : v + ' steps';
+              if (metric === 'protein') return v + 'g protein';
+              return v + ' kcal';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color: ctx => days[ctx.index]?.isToday ? '#60c8f0' : '#6b6b6b',
+            font: ctx => ({ family: 'DM Mono', size: 9, weight: days[ctx.index]?.isToday ? '700' : '400' })
+          }
+        },
+        y: {
+          grid: { color: '#2a2a2a' },
+          border: { display: false },
+          ticks: {
+            color: '#6b6b6b',
+            font: { family: 'DM Mono', size: 9 },
+            maxTicksLimit: 4,
+            callback: v => metric === 'steps'
+              ? (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v)
+              : metric === 'protein' ? v + 'g' : v
+          }
+        }
+      }
+    }
+  });
+
+  const daysWithKcal  = days.filter(d => d.kcal > 0);
+  const daysWithP     = days.filter(d => d.protein > 0);
   const daysWithSteps = days.filter(d => d.steps > 0);
   const avg = (arr, key) => arr.length ? Math.round(arr.reduce((s, d) => s + d[key], 0) / arr.length) : null;
 
-  const avgKcal  = avg(daysWithKcal, 'kcal');
-  const avgP     = avg(daysWithP, 'protein');
+  const avgKcal  = avg(daysWithKcal,  'kcal');
+  const avgP     = avg(daysWithP,     'protein');
   const avgSteps = avg(daysWithSteps, 'steps');
   const tgt = state.targets;
 
   document.getElementById('weeklyAvgs').innerHTML = `
     <div class="wavg-card">
-      <div class="wavg-val" style="color:var(--accent);">${avgKcal != null ? avgKcal.toLocaleString() : '—'}</div>
+      <div class="wavg-val" style="color:#c8f060;">${avgKcal != null ? avgKcal.toLocaleString() : '—'}</div>
       <div class="wavg-label">avg kcal / day</div>
       <div class="wavg-target">target ${tgt.kcal.toLocaleString()}</div>
     </div>
@@ -877,10 +939,52 @@ function renderWeeklySummary() {
       <div class="wavg-target">target ${tgt.protein}g</div>
     </div>
     <div class="wavg-card">
-      <div class="wavg-val" style="color:var(--accent2);">${avgSteps != null ? avgSteps.toLocaleString() : '—'}</div>
+      <div class="wavg-val" style="color:#60c8f0;">${avgSteps != null ? avgSteps.toLocaleString() : '—'}</div>
       <div class="wavg-label">avg steps / day</div>
       <div class="wavg-target">target ${tgt.steps.toLocaleString()}</div>
     </div>`;
+}
+
+// ── Session card ──────────────────────────────────────────────────────────────
+
+const REST_MESSAGES = [
+  'Recovery is part of the process',
+  'Rest days build the gains',
+  'Growth happens at rest',
+  'Your muscles are rebuilding — let them',
+  'Rest is training too'
+];
+
+function renderSessionCard() {
+  const el = document.getElementById('sessionCard');
+  const workout = state.workout || '';
+
+  if (!workout || workout === 'Rest') {
+    const msg = REST_MESSAGES[new Date().getDay() % REST_MESSAGES.length];
+    el.innerHTML = `
+      <div class="section-title">Today's session</div>
+      <div style="padding:0.75rem 0 0.25rem;">
+        <div style="font-family:'DM Mono',monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px;">Rest Day</div>
+        <div style="font-size:1rem;font-weight:700;line-height:1.5;color:var(--text);">${msg}</div>
+      </div>`;
+    return;
+  }
+
+  const exercises = WORKOUT_PLANS[workout];
+  if (exercises) {
+    el.innerHTML = `
+      <div class="section-title">Today's session</div>
+      <div style="font-size:2.4rem;font-weight:800;letter-spacing:-0.03em;color:var(--accent2);line-height:1;margin-bottom:12px;">${workout}</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${exercises.map(ex => `<div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);">— ${ex}</div>`).join('')}
+      </div>
+      ${state.activityNotes ? `<div style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text);margin-top:10px;padding-top:8px;border-top:1px solid var(--border);line-height:1.6;">${state.activityNotes}</div>` : ''}`;
+  } else {
+    el.innerHTML = `
+      <div class="section-title">Today's session</div>
+      <div style="font-size:1.8rem;font-weight:800;color:var(--accent2);margin-bottom:6px;">${workout}</div>
+      ${state.activityNotes ? `<div style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--muted);line-height:1.6;">${state.activityNotes}</div>` : ''}`;
+  }
 }
 
 function renderFoodLog() {
