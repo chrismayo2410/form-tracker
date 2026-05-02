@@ -10,24 +10,38 @@
 </head>
 <body>
 
+<nav class="left-nav">
+  <div class="left-nav-logo">FORM<span>.</span></div>
+  <ul class="left-nav-links">
+    <li class="left-nav-link active" onclick="setNavActive(this)">🏠 <span>Overview</span></li>
+    <li class="left-nav-link" onclick="switchTab('food');setNavActive(this)">🍽️ <span>Food</span></li>
+    <li class="left-nav-link" onclick="switchTab('steps');setNavActive(this)">👟 <span>Steps</span></li>
+    <li class="left-nav-link" onclick="switchTab('targets');setNavActive(this)">🎯 <span>Targets</span></li>
+    <li class="left-nav-link" onclick="switchTab('workout');setNavActive(this)">💪 <span>Workout</span></li>
+    <li class="left-nav-link" onclick="switchTab('steps');setNavActive(this)">😴 <span>Sleep</span></li>
+    <li class="left-nav-link" onclick="openCalendar();setNavActive(this)">📅 <span>History</span></li>
+    <li class="left-nav-link" onclick="openMeals();setNavActive(this)">💡 <span>Meal Ideas</span></li>
+  </ul>
+  <div class="left-nav-ring-wrap">
+    <svg class="ring-svg" viewBox="0 0 80 80">
+      <circle class="ring-bg" cx="40" cy="40" r="32"/>
+      <circle class="ring-fill" id="navRingFill" cx="40" cy="40" r="32"/>
+      <text class="ring-pct" id="navRingPct" x="40" y="45" text-anchor="middle">0%</text>
+    </svg>
+    <div class="ring-msg" id="navRingMsg">Start logging!</div>
+  </div>
+</nav>
+
+<div class="page-wrapper">
 <header>
-  <div class="logo">FORM<span>.</span></div>
-  <div class="header-right">
+  <div class="top-bar-left">
+    <div class="top-bar-greeting" id="greetingText">Good morning, Chris</div>
     <div class="date-display" id="dateDisplay"></div>
-    <button class="icon-btn" onclick="openCalendar()" title="View history">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="1" y="2" width="14" height="13" rx="2"/>
-        <path d="M5 1v2M11 1v2M1 6h14"/>
-      </svg>
-      History
-    </button>
-    <button class="icon-btn" onclick="openMeals()" title="Recommended meals" style="border-color: rgba(96,200,240,0.3); color: var(--accent2);">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M8 2a5 5 0 100 10A5 5 0 008 2z"/>
-        <path d="M8 5v3l2 1"/>
-      </svg>
-      Meal ideas
-    </button>
+  </div>
+  <div class="top-bar-streak">
+    <span class="streak-flame">🔥</span>
+    <span class="streak-count" id="streakCount">0</span>
+    <span class="streak-text">day streak</span>
   </div>
 </header>
 
@@ -297,6 +311,7 @@
 
   </div>
 </div>
+</div>
 
 <!-- CALENDAR MODAL -->
 <div class="modal-overlay" id="calendarModal">
@@ -323,5 +338,56 @@
 </div>
 
 <script src="script.js"></script>
+<script>
+(function() {
+  var h = new Date().getHours();
+  var greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  var el = document.getElementById('greetingText');
+  if (el) el.textContent = greet + ', Chris';
+})();
+
+(function() {
+  try {
+    var hist = JSON.parse(localStorage.getItem('formTrackerHistory') || '{}');
+    var streak = 0;
+    var check = new Date();
+    for (var i = 0; i < 365; i++) {
+      if (hist[check.toDateString()]) { streak++; check.setDate(check.getDate() - 1); }
+      else break;
+    }
+    var el = document.getElementById('streakCount');
+    if (el) el.textContent = streak;
+  } catch(e) {}
+})();
+
+function updateNavRing() {
+  var ids = ['kBar', 'pBar', 'stepsFill'];
+  var total = 0, count = 0;
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { total += Math.min(parseFloat(el.style.width) || 0, 100); count++; }
+  });
+  var pct = count > 0 ? Math.round(total / count) : 0;
+  var fill = document.getElementById('navRingFill');
+  var lbl = document.getElementById('navRingPct');
+  var msg = document.getElementById('navRingMsg');
+  if (fill) fill.style.strokeDashoffset = 201.06 * (1 - pct / 100);
+  if (lbl) lbl.textContent = pct + '%';
+  if (msg) msg.textContent = pct === 0 ? 'Start logging!' : pct < 33 ? 'Keep going!' : pct < 66 ? 'Halfway there!' : pct < 100 ? 'Almost there!' : 'Goals smashed!';
+}
+
+var _ringObs = new MutationObserver(updateNavRing);
+['kBar', 'pBar', 'stepsFill'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) _ringObs.observe(el, { attributes: true, attributeFilter: ['style'] });
+});
+
+function setNavActive(el) {
+  document.querySelectorAll('.left-nav-link').forEach(function(item) { item.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+updateNavRing();
+</script>
 </body>
 </html>

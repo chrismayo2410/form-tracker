@@ -16,7 +16,7 @@
   body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
 
   /* HEADER */
-  header { padding: 2rem 2rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
   .logo span { color: var(--accent); }
   .header-right { display: flex; align-items: center; gap: 10px; }
@@ -26,7 +26,7 @@
   .icon-btn svg { width: 14px; height: 14px; }
 
   /* LAYOUT */
-  .main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 80px); }
+  .main { display: grid; grid-template-columns: 340px 1fr; gap: 0; flex: 1; }
   .sidebar { border-right: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
   .content { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; }
 
@@ -257,8 +257,35 @@
   .wo-type-btn.active { background: rgba(200,240,96,0.12); border-color: var(--accent); color: var(--accent); font-weight: 700; }
   .wo-no-type { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); text-align: center; padding: 1.5rem 0; }
 
+  /* LEFT NAV */
+  .left-nav { position: fixed; left: 0; top: 0; width: 200px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.5rem 1rem; z-index: 50; overflow-y: auto; }
+  .left-nav-logo { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1.75rem; padding-left: 6px; }
+  .left-nav-logo span { color: var(--accent); }
+  .left-nav-links { list-style: none; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .left-nav-link { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s; user-select: none; white-space: nowrap; }
+  .left-nav-link:hover { background: var(--bg3); color: var(--text); }
+  .left-nav-link.active { background: var(--accent); color: #0e0e0e; }
+  .left-nav-ring-wrap { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .ring-svg { width: 80px; height: 80px; }
+  .ring-bg { fill: none; stroke: var(--border2); stroke-width: 6; }
+  .ring-fill { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 201.06; stroke-dashoffset: 201.06; transform-origin: 40px 40px; transform: rotate(-90deg); transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .ring-pct { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700; fill: var(--text); }
+  .ring-msg { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--muted); text-align: center; line-height: 1.4; }
+
+  /* PAGE WRAPPER */
+  .page-wrapper { margin-left: 200px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* TOP BAR */
+  .top-bar-greeting { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 3px; }
+  .top-bar-streak { display: flex; align-items: center; gap: 6px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 8px 14px; }
+  .streak-flame { font-size: 1.1rem; }
+  .streak-count { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--accent3); font-size: 1rem; }
+  .streak-text { font-family: 'DM Mono', monospace; color: var(--muted); font-size: 0.72rem; }
+
   /* RESPONSIVE */
   @media (max-width: 900px) {
+    .left-nav { display: none; }
+    .page-wrapper { margin-left: 0; }
     .main { grid-template-columns: 1fr; }
     .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
     .stats-row { grid-template-columns: repeat(2, 1fr); }
