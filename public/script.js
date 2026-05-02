@@ -193,6 +193,15 @@ function renderAll() {
   document.getElementById('workoutDisplay').textContent = state.workout || 'Rest';
   document.getElementById('activityNotesDisplay').textContent = state.activityNotes || '';
 
+  const tpKcal = document.getElementById('tpKcal');
+  const tpProtein = document.getElementById('tpProtein');
+  const tpSteps = document.getElementById('tpSteps');
+  const tpSleep = document.getElementById('tpSleep');
+  if (tpKcal) tpKcal.textContent = tgt.kcal + ' kcal';
+  if (tpProtein) tpProtein.textContent = tgt.protein + ' g';
+  if (tpSteps) tpSteps.textContent = tgt.steps.toLocaleString();
+  if (tpSleep) tpSleep.textContent = tgt.sleep + ' h';
+
   renderFoodLog();
   renderWeeklySummary();
   renderMacroDonut();
@@ -544,8 +553,28 @@ function switchTab(id) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
-  event.target.classList.add('active');
+  if (event && event.target && event.target.classList.contains('tab-btn')) {
+    event.target.classList.add('active');
+  } else {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      if (b.textContent.trim().toLowerCase() === id) b.classList.add('active');
+    });
+  }
   if (id === 'workout') initWorkoutTab();
+}
+
+function goToTargets() {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.textContent.trim() === 'Targets') b.classList.add('active');
+  });
+  const pane = document.getElementById('tab-targets');
+  if (pane) pane.classList.add('active');
+  document.querySelectorAll('.left-nav-link').forEach(l => {
+    l.classList.remove('active');
+    if (l.textContent.includes('Targets')) l.classList.add('active');
+  });
 }
 
 // ── Date display ──────────────────────────────────────────────────────────────

@@ -256,7 +256,7 @@
     </div>
 
     <!-- MACRO BARS + STEPS -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div class="mid-grid">
       <div class="macro-section">
         <div class="section-title">Macros today</div>
         <div class="macro-donut-layout">
@@ -300,7 +300,7 @@
         </div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="right-col">
         <div class="steps-section">
           <div class="section-title">Steps</div>
           <div class="steps-big" id="stepsBig">—</div>
@@ -308,13 +308,42 @@
           <div class="steps-bar"><div class="steps-fill" id="stepsFill" style="width:0%;"></div></div>
         </div>
 
-        <div class="macro-section" style="flex:1;">
+        <div class="macro-section">
           <div class="section-title">Today's session</div>
-          <div id="workoutDisplay" style="font-size:1.5rem;font-weight:800;color:var(--accent2);margin-bottom:6px;">Rest</div>
-          <div id="activityNotesDisplay" style="font-size:0.8rem;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.6;"></div>
+          <div id="workoutDisplay" class="workout-display-val">Rest</div>
+          <div id="activityNotesDisplay" class="workout-notes-val"></div>
+        </div>
+
+        <div class="macro-section">
+          <div class="tgt-panel-hdr">
+            <div class="section-title" style="margin-bottom:0;">Daily targets</div>
+            <button class="edit-tgt-btn" onclick="goToTargets()">Edit →</button>
+          </div>
+          <div class="tgt-summary">
+            <div class="tgt-row">
+              <span class="tgt-emoji">🔥</span>
+              <span class="tgt-name">Calories</span>
+              <span class="tgt-val" id="tpKcal">2350 kcal</span>
+            </div>
+            <div class="tgt-row">
+              <span class="tgt-emoji">💪</span>
+              <span class="tgt-name">Protein</span>
+              <span class="tgt-val" id="tpProtein">180 g</span>
+            </div>
+            <div class="tgt-row">
+              <span class="tgt-emoji">👟</span>
+              <span class="tgt-name">Steps</span>
+              <span class="tgt-val" id="tpSteps">8,000</span>
+            </div>
+            <div class="tgt-row">
+              <span class="tgt-emoji">😴</span>
+              <span class="tgt-name">Sleep</span>
+              <span class="tgt-val" id="tpSleep">8 h</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </div><!-- end mid-grid -->
 
     <!-- WEEKLY SUMMARY -->
     <div class="weekly-section">
@@ -396,7 +425,7 @@
 })();
 
 function updateNavRing() {
-  var ids = ['statKcalBar', 'statPBar', 'statStepsBar'];
+  var ids = ['statKcalBar', 'statPBar', 'statStepsBar', 'statSleepBar'];
   var total = 0, count = 0;
   ids.forEach(function(id) {
     var el = document.getElementById(id);
@@ -412,7 +441,7 @@ function updateNavRing() {
 }
 
 var _ringObs = new MutationObserver(updateNavRing);
-['statKcalBar', 'statPBar', 'statStepsBar'].forEach(function(id) {
+['statKcalBar', 'statPBar', 'statStepsBar', 'statSleepBar'].forEach(function(id) {
   var el = document.getElementById(id);
   if (el) _ringObs.observe(el, { attributes: true, attributeFilter: ['style'] });
 });
