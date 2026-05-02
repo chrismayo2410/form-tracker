@@ -187,6 +187,15 @@ function renderAll() {
   document.getElementById('stepsTargetDisp').textContent = tgt.steps.toLocaleString();
   document.getElementById('stepsFill').style.width = stepsPct + '%';
 
+  document.getElementById('statKcalRemain').textContent = Math.max(0, tgt.kcal - Math.round(t.kcal));
+  document.getElementById('statPRemain').innerHTML = Math.max(0, tgt.protein - Math.round(t.protein)) + '<span class="sc-unit">g</span>';
+  document.getElementById('statStepsRemain').textContent = state.steps != null ? Math.max(0, tgt.steps - state.steps).toLocaleString() : tgt.steps.toLocaleString();
+  document.getElementById('statSleepRemain').innerHTML = (state.sleep != null ? Math.max(0, tgt.sleep - state.sleep) : tgt.sleep) + '<span class="sc-unit">h</span>';
+  document.getElementById('statKcalBar').style.width = barPct(Math.round(t.kcal), tgt.kcal) + '%';
+  document.getElementById('statPBar').style.width = barPct(Math.round(t.protein), tgt.protein) + '%';
+  document.getElementById('statStepsBar').style.width = (state.steps != null ? barPct(state.steps, tgt.steps) : 0) + '%';
+  document.getElementById('statSleepBar').style.width = (state.sleep != null ? barPct(state.sleep, tgt.sleep) : 0) + '%';
+
   document.getElementById('workoutDisplay').textContent = state.workout || 'Rest';
   document.getElementById('activityNotesDisplay').textContent = state.activityNotes || '';
 

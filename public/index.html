@@ -217,25 +217,41 @@
 
     <!-- STATS ROW -->
     <div class="stats-row">
-      <div class="stat-card" style="--accent-color: var(--accent);">
-        <div class="stat-label">Calories</div>
-        <div class="stat-val" id="totalKcal">0</div>
-        <div class="stat-unit" id="kcalRemain">of <span id="tKcal">2350</span> kcal</div>
+      <div class="stat-card sc-calories">
+        <div class="sc-header">
+          <span class="sc-label">Calories</span>
+          <span class="sc-icon">🔥</span>
+        </div>
+        <div class="sc-remaining" id="statKcalRemain">2350</div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" id="statKcalBar"></div></div>
+        <div class="sc-footer"><span id="totalKcal">0</span> kcal consumed · target <span id="tKcal">2350</span></div>
       </div>
-      <div class="stat-card" style="--accent-color: #9ee8a0;">
-        <div class="stat-label">Protein</div>
-        <div class="stat-val" id="totalP">0<span style="font-size:1rem">g</span></div>
-        <div class="stat-unit">of <span id="tP">180</span>g</div>
+      <div class="stat-card sc-protein">
+        <div class="sc-header">
+          <span class="sc-label">Protein</span>
+          <span class="sc-icon">💪</span>
+        </div>
+        <div class="sc-remaining" id="statPRemain">180<span class="sc-unit">g</span></div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" id="statPBar"></div></div>
+        <div class="sc-footer"><span id="totalP">0</span> consumed · target <span id="tP">180</span>g</div>
       </div>
-      <div class="stat-card" style="--accent-color: var(--accent2);">
-        <div class="stat-label">Steps</div>
-        <div class="stat-val" id="stepsDisplay">—</div>
-        <div class="stat-unit">target <span id="tSteps">8,000</span></div>
+      <div class="stat-card sc-steps">
+        <div class="sc-header">
+          <span class="sc-label">Steps</span>
+          <span class="sc-icon">👟</span>
+        </div>
+        <div class="sc-remaining" id="statStepsRemain">8,000</div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" id="statStepsBar"></div></div>
+        <div class="sc-footer"><span id="stepsDisplay">—</span> taken · target <span id="tSteps">8,000</span></div>
       </div>
-      <div class="stat-card" style="--accent-color: var(--accent3);">
-        <div class="stat-label">Sleep</div>
-        <div class="stat-val" id="sleepDisplay">—<span style="font-size:1rem">h</span></div>
-        <div class="stat-unit">target <span id="tSleep">8</span>h</div>
+      <div class="stat-card sc-sleep">
+        <div class="sc-header">
+          <span class="sc-label">Sleep</span>
+          <span class="sc-icon">😴</span>
+        </div>
+        <div class="sc-remaining" id="statSleepRemain">8<span class="sc-unit">h</span></div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" id="statSleepBar"></div></div>
+        <div class="sc-footer"><span id="sleepDisplay">—</span> logged · target <span id="tSleep">8</span>h</div>
       </div>
     </div>
 
