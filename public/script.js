@@ -1,5 +1,7 @@
 const API_URL = "/api/analyse";
 
+let macroDonutChart = null;
+
 let state = {
   targets: { kcal: 2350, protein: 180, carbs: 235, fat: 70, steps: 8000, sleep: 8 },
   foods: [],
@@ -169,14 +171,6 @@ function renderAll() {
   document.getElementById('fNums').textContent = Math.round(t.fat) + ' / ' + tgt.fat + 'g';
   document.getElementById('kNums').textContent = Math.round(t.kcal) + ' / ' + tgt.kcal;
 
-  ['p', 'c', 'f', 'k'].forEach((m, i) => {
-    const vals = [t.protein, t.carbs, t.fat, t.kcal];
-    const tgts = [tgt.protein, tgt.carbs, tgt.fat, tgt.kcal];
-    const el = document.getElementById(m + 'Bar');
-    el.style.width = barPct(vals[i], tgts[i]) + '%';
-    el.classList.toggle('bar-over', vals[i] > tgts[i]);
-  });
-
   const remK = Math.max(0, tgt.kcal - Math.round(t.kcal));
   const remP = Math.max(0, tgt.protein - Math.round(t.protein));
   document.getElementById('remKcal').textContent = remK + ' kcal';
@@ -201,6 +195,89 @@ function renderAll() {
 
   renderFoodLog();
   renderWeeklySummary();
+  renderMacroDonut();
+}
+
+function renderMacroDonut() {
+  const t = getTotals();
+  const tgt = state.targets;
+
+  const pPct = tgt.protein > 0 ? Math.min(100, (t.protein / tgt.protein) * 100) : 0;
+  const cPct = tgt.carbs   > 0 ? Math.min(100, (t.carbs   / tgt.carbs)   * 100) : 0;
+  const fPct = tgt.fat     > 0 ? Math.min(100, (t.fat     / tgt.fat)     * 100) : 0;
+  const kPct = tgt.kcal    > 0 ? Math.min(100, (t.kcal    / tgt.kcal)    * 100) : 0;
+  const overallPct = Math.round((pPct + cPct + fPct + kPct) / 4);
+
+  const gapSize   = 3;
+  const macroUnits = (100 - 4 * gapSize) / 4; // 22 units per macro
+
+  const donutData = [
+    pPct / 100 * macroUnits, (1 - pPct / 100) * macroUnits, gapSize,
+    cPct / 100 * macroUnits, (1 - cPct / 100) * macroUnits, gapSize,
+    fPct / 100 * macroUnits, (1 - fPct / 100) * macroUnits, gapSize,
+    kPct / 100 * macroUnits, (1 - kPct / 100) * macroUnits, gapSize
+  ];
+  const donutColors = [
+    '#9ee8a0', 'rgba(158,232,160,0.12)', 'rgba(0,0,0,0)',
+    '#60c8f0', 'rgba(96,200,240,0.12)',  'rgba(0,0,0,0)',
+    '#f0a060', 'rgba(240,160,96,0.12)',  'rgba(0,0,0,0)',
+    '#c8f060', 'rgba(200,240,96,0.12)',  'rgba(0,0,0,0)'
+  ];
+
+  const canvas = document.getElementById('macroDonutCanvas');
+  if (!canvas) return;
+
+  if (macroDonutChart) {
+    macroDonutChart._overallPct = overallPct;
+    macroDonutChart.data.datasets[0].data = donutData;
+    macroDonutChart.update();
+    return;
+  }
+
+  const centerPlugin = {
+    id: 'donutCenter',
+    beforeDraw(chart) {
+      const { ctx, chartArea } = chart;
+      if (!chartArea) return;
+      const cx = (chartArea.left + chartArea.right) / 2;
+      const cy = (chartArea.top  + chartArea.bottom) / 2;
+      ctx.save();
+      ctx.font = '800 1.5rem Syne, sans-serif';
+      ctx.fillStyle = '#f0ede8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((chart._overallPct ?? 0) + '%', cx, cy - 7);
+      ctx.font = '400 0.52rem DM Mono, monospace';
+      ctx.fillStyle = '#6b6b6b';
+      ctx.textBaseline = 'top';
+      ctx.fillText('of goals', cx, cy + 8);
+      ctx.restore();
+    }
+  };
+
+  macroDonutChart = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: donutData,
+        backgroundColor: donutColors,
+        borderWidth: 0,
+        hoverOffset: 0
+      }]
+    },
+    options: {
+      cutout: '70%',
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      },
+      animation: { duration: 500 }
+    },
+    plugins: [centerPlugin]
+  });
+  macroDonutChart._overallPct = overallPct;
 }
 
 // ── Weekly summary ────────────────────────────────────────────────────────────

@@ -58,6 +58,16 @@
   .bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
   .bar-over { background: var(--red) !important; }
 
+  /* MACRO DONUT */
+  .macro-donut-layout { display: flex; align-items: center; gap: 18px; }
+  .macro-donut-canvas-wrap { width: 130px; height: 130px; flex-shrink: 0; }
+  .macro-donut-legend { flex: 1; display: flex; flex-direction: column; gap: 11px; }
+  .macro-legend-item { display: flex; align-items: center; gap: 10px; }
+  .macro-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .macro-legend-info { flex: 1; min-width: 0; }
+  .macro-legend-name { font-size: 0.82rem; font-weight: 600; line-height: 1; }
+  .macro-legend-val { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
   /* FOOD LOG */
   .food-log { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); flex: 1; }
   .food-log-header { padding: 1.25rem 1.25rem 0; }

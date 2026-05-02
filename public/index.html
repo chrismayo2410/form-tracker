@@ -259,21 +259,40 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div class="macro-section">
         <div class="section-title">Macros today</div>
-        <div class="macro-row">
-          <div class="macro-top"><span class="macro-name">Protein</span><span class="macro-nums" id="pNums">0 / 180g</span></div>
-          <div class="bar-track"><div class="bar-fill" id="pBar" style="width:0%;background:#9ee8a0;"></div></div>
-        </div>
-        <div class="macro-row">
-          <div class="macro-top"><span class="macro-name">Carbs</span><span class="macro-nums" id="cNums">0 / 235g</span></div>
-          <div class="bar-track"><div class="bar-fill" id="cBar" style="width:0%;background:var(--accent2);"></div></div>
-        </div>
-        <div class="macro-row">
-          <div class="macro-top"><span class="macro-name">Fat</span><span class="macro-nums" id="fNums">0 / 70g</span></div>
-          <div class="bar-track"><div class="bar-fill" id="fBar" style="width:0%;background:var(--accent3);"></div></div>
-        </div>
-        <div class="macro-row">
-          <div class="macro-top"><span class="macro-name">Calories</span><span class="macro-nums" id="kNums">0 / 2350</span></div>
-          <div class="bar-track"><div class="bar-fill" id="kBar" style="width:0%;background:var(--accent);"></div></div>
+        <div class="macro-donut-layout">
+          <div class="macro-donut-canvas-wrap">
+            <canvas id="macroDonutCanvas"></canvas>
+          </div>
+          <div class="macro-donut-legend">
+            <div class="macro-legend-item">
+              <div class="macro-legend-dot" style="background:#9ee8a0;"></div>
+              <div class="macro-legend-info">
+                <div class="macro-legend-name">Protein</div>
+                <div class="macro-legend-val" id="pNums">0 / 180g</div>
+              </div>
+            </div>
+            <div class="macro-legend-item">
+              <div class="macro-legend-dot" style="background:var(--accent2);"></div>
+              <div class="macro-legend-info">
+                <div class="macro-legend-name">Carbs</div>
+                <div class="macro-legend-val" id="cNums">0 / 235g</div>
+              </div>
+            </div>
+            <div class="macro-legend-item">
+              <div class="macro-legend-dot" style="background:var(--accent3);"></div>
+              <div class="macro-legend-info">
+                <div class="macro-legend-name">Fat</div>
+                <div class="macro-legend-val" id="fNums">0 / 70g</div>
+              </div>
+            </div>
+            <div class="macro-legend-item">
+              <div class="macro-legend-dot" style="background:var(--accent);"></div>
+              <div class="macro-legend-info">
+                <div class="macro-legend-name">Calories</div>
+                <div class="macro-legend-val" id="kNums">0 / 2350</div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="targets" id="remainingTargets" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
           <div class="target-line"><span>Remaining calories</span><span class="target-val" id="remKcal">2350</span></div>
@@ -377,7 +396,7 @@
 })();
 
 function updateNavRing() {
-  var ids = ['kBar', 'pBar', 'stepsFill'];
+  var ids = ['statKcalBar', 'statPBar', 'statStepsBar'];
   var total = 0, count = 0;
   ids.forEach(function(id) {
     var el = document.getElementById(id);
@@ -393,7 +412,7 @@ function updateNavRing() {
 }
 
 var _ringObs = new MutationObserver(updateNavRing);
-['kBar', 'pBar', 'stepsFill'].forEach(function(id) {
+['statKcalBar', 'statPBar', 'statStepsBar'].forEach(function(id) {
   var el = document.getElementById(id);
   if (el) _ringObs.observe(el, { attributes: true, attributeFilter: ['style'] });
 });
