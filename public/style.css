@@ -336,3 +336,32 @@
     .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
     .stats-row { grid-template-columns: repeat(2, 1fr); }
   }
+
+  /* WEIGHT PAGE */
+  .weight-page { flex-direction: column; gap: 1.5rem; padding: 1.5rem; flex: 1; overflow-y: auto; }
+  .weight-page::-webkit-scrollbar { width: 4px; }
+  .weight-page::-webkit-scrollbar-thumb { background: var(--border2); }
+  .weight-log-card, .weight-chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .weight-log-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+  .weight-log-row button.primary { width: auto; padding: 10px 22px; align-self: flex-end; flex-shrink: 0; }
+  .weight-chart-wrap { position: relative; height: 240px; margin-top: 0.75rem; }
+  .weight-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .weight-stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1rem; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .wsc-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .wsc-val { font-size: 2.4rem; font-weight: 500; color: var(--accent); line-height: 1; letter-spacing: -0.03em; margin: 8px 0 4px; }
+  .wsc-unit { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); }
+
+  /* WEIGHT WIDGET */
+  .weight-today-val { font-size: 2rem; font-weight: 500; color: var(--accent); letter-spacing: -0.03em; line-height: 1; margin: 4px 0; }
+  .weight-quick-form { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
+  .weight-quick-form input { flex: 1; margin-bottom: 0; }
+  .weight-quick-btn { background: #e8a04a; color: #2d2010; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.8rem; padding: 9px 14px; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; flex-shrink: 0; }
+  .weight-quick-btn:hover { opacity: 0.85; }
+
+  @media (max-width: 1200px) {
+    .weight-stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .weight-stats-row { grid-template-columns: repeat(2, 1fr); }
+    .weight-page { padding: 1rem; }
+  }

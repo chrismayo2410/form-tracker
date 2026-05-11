@@ -34,7 +34,7 @@
 <nav class="left-nav">
   <div class="left-nav-logo">FORM<span>.</span></div>
   <ul class="left-nav-links">
-    <li class="left-nav-link active" onclick="setNavActive(this)">🏠 <span>Overview</span></li>
+    <li class="left-nav-link active" onclick="switchToOverview();setNavActive(this)">🏠 <span>Overview</span></li>
     <li class="left-nav-link" onclick="switchTab('food');setNavActive(this)">🍽️ <span>Food</span></li>
     <li class="left-nav-link" onclick="switchTab('steps');setNavActive(this)">👟 <span>Steps</span></li>
     <li class="left-nav-link" onclick="switchTab('targets');setNavActive(this)">🎯 <span>Targets</span></li>
@@ -42,6 +42,7 @@
     <li class="left-nav-link" onclick="switchTab('steps');setNavActive(this)">😴 <span>Sleep</span></li>
     <li class="left-nav-link" onclick="openCalendar();setNavActive(this)">📅 <span>History</span></li>
     <li class="left-nav-link" onclick="openMeals();setNavActive(this)">💡 <span>Meal Ideas</span></li>
+    <li class="left-nav-link" onclick="switchToWeightPage();setNavActive(this)">⚖️ <span>Weight</span></li>
   </ul>
   <div class="left-nav-ring-wrap">
     <svg class="ring-svg" viewBox="0 0 80 80">
@@ -382,6 +383,15 @@
             </div>
           </div>
         </div>
+
+        <!-- WEIGHT WIDGET -->
+        <div class="macro-section" id="weightWidget">
+          <div class="sc-header" style="margin-bottom:10px;">
+            <span class="sc-label">Weight</span>
+            <span class="sc-icon">⚖️</span>
+          </div>
+          <div id="weightWidgetContent"></div>
+        </div>
       </div>
     </div><!-- end mid-grid -->
 
@@ -413,6 +423,55 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- WEIGHT PAGE -->
+<div id="weightPage" class="weight-page" style="display:none;">
+  <div class="weight-log-card">
+    <div class="section-title">Log weight</div>
+    <div class="weight-log-row">
+      <div class="input-group" style="flex:1;min-width:130px;margin-bottom:0;">
+        <label>Weight (kg)</label>
+        <input type="number" id="weightInput" placeholder="e.g. 82.5" step="0.1" min="1" max="500">
+      </div>
+      <div class="input-group" style="flex:1;min-width:130px;margin-bottom:0;">
+        <label>Date</label>
+        <input type="date" id="weightDate">
+      </div>
+      <button class="primary" onclick="saveWeight()" style="width:auto;padding:10px 22px;align-self:flex-end;">Save</button>
+    </div>
+  </div>
+
+  <div class="weight-chart-card">
+    <div class="section-title">30-day trend</div>
+    <div class="weight-chart-wrap" id="weightChartWrap">
+      <canvas id="weightChartCanvas"></canvas>
+    </div>
+    <div id="weightChartEmpty" class="wo-empty" style="display:none;">No weight entries yet — log your first weight above</div>
+  </div>
+
+  <div class="weight-stats-row">
+    <div class="weight-stat-card">
+      <div class="wsc-label">Current weight</div>
+      <div class="wsc-val" id="wStatCurrent">—</div>
+      <div class="wsc-unit">kg</div>
+    </div>
+    <div class="weight-stat-card">
+      <div class="wsc-label">Starting weight</div>
+      <div class="wsc-val" id="wStatStart">—</div>
+      <div class="wsc-unit">kg</div>
+    </div>
+    <div class="weight-stat-card">
+      <div class="wsc-label">Total change</div>
+      <div class="wsc-val" id="wStatChange">—</div>
+      <div class="wsc-unit">kg</div>
+    </div>
+    <div class="weight-stat-card">
+      <div class="wsc-label">7-day trend</div>
+      <div class="wsc-val" id="wStat7Day">—</div>
+      <div class="wsc-unit">kg / week</div>
+    </div>
   </div>
 </div>
 </div>

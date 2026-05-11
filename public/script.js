@@ -1256,6 +1256,296 @@ function confirmSaveTemplate() {
   cancelSaveTemplate();
 }
 
+// ── Weight logging ────────────────────────────────────────────────────────────
+
+function getWeightLog() {
+  try {
+    const raw = localStorage.getItem('weightLog');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveWeightLog(log) {
+  try { localStorage.setItem('weightLog', JSON.stringify(log)); } catch(e) {}
+}
+
+let weightChartInst = null;
+
+function switchToWeightPage() {
+  document.getElementById('weightPage').style.display = 'flex';
+  document.querySelector('.main').style.display = 'none';
+  document.getElementById('pastDateBanner').style.display = 'none';
+  const dateInput = document.getElementById('weightDate');
+  if (dateInput && !dateInput.value) dateInput.value = todayDateStr();
+  renderWeightChart();
+  renderWeightStats();
+}
+
+function switchToOverview() {
+  document.getElementById('weightPage').style.display = 'none';
+  document.querySelector('.main').style.display = '';
+  updateDateDisplay();
+}
+
+function saveWeight() {
+  const dateEl = document.getElementById('weightDate');
+  const weightEl = document.getElementById('weightInput');
+  const date = dateEl.value;
+  const weight = parseFloat(weightEl.value);
+
+  if (!date || !weight || weight <= 0) { alert('Please enter a valid weight and date.'); return; }
+
+  const log = getWeightLog();
+  const idx = log.findIndex(e => e.date === date);
+  if (idx >= 0) {
+    log[idx].weight = weight;
+  } else {
+    log.push({ date, weight });
+    log.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  saveWeightLog(log);
+  weightEl.value = '';
+  renderWeightChart();
+  renderWeightStats();
+  renderWeightWidget();
+}
+
+function saveWeightQuick() {
+  const input = document.getElementById('weightQuickInput');
+  if (!input) return;
+  const weight = parseFloat(input.value);
+  if (!weight || weight <= 0) { input.focus(); return; }
+
+  const log = getWeightLog();
+  const todayStr = todayDateStr();
+  const idx = log.findIndex(e => e.date === todayStr);
+  if (idx >= 0) {
+    log[idx].weight = weight;
+  } else {
+    log.push({ date: todayStr, weight });
+    log.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  saveWeightLog(log);
+  input.value = '';
+  renderWeightWidget();
+  if (document.getElementById('weightPage').style.display !== 'none') {
+    renderWeightChart();
+    renderWeightStats();
+  }
+}
+
+function renderWeightChart() {
+  const log = getWeightLog();
+  const canvas = document.getElementById('weightChartCanvas');
+  const emptyEl = document.getElementById('weightChartEmpty');
+  const wrapEl = document.getElementById('weightChartWrap');
+  if (!canvas) return;
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 29);
+  const cutoffStr = cutoff.getFullYear() + '-' + pad(cutoff.getMonth() + 1) + '-' + pad(cutoff.getDate());
+
+  const entries = log.filter(e => e.date >= cutoffStr).sort((a, b) => a.date.localeCompare(b.date));
+
+  if (entries.length === 0) {
+    if (wrapEl) wrapEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    if (weightChartInst) { weightChartInst.destroy(); weightChartInst = null; }
+    return;
+  }
+
+  if (wrapEl) wrapEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const labels = entries.map(e => {
+    const d = new Date(e.date + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  });
+  const weights = entries.map(e => e.weight);
+
+  const ma7 = weights.map((_, i) => {
+    const slice = weights.slice(Math.max(0, i - 6), i + 1);
+    return Math.round((slice.reduce((a, b) => a + b, 0) / slice.length) * 10) / 10;
+  });
+
+  const allLog = log.sort((a, b) => a.date.localeCompare(b.date));
+  const startWeight = allLog.length > 0 ? allLog[0].weight : null;
+
+  if (weightChartInst) { weightChartInst.destroy(); weightChartInst = null; }
+
+  const datasets = [
+    {
+      label: 'Weight',
+      data: weights,
+      borderColor: 'rgba(232,160,74,0.45)',
+      backgroundColor: 'rgba(232,160,74,0.05)',
+      borderWidth: 1.5,
+      pointBackgroundColor: 'rgba(232,160,74,0.7)',
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      tension: 0.3,
+      fill: false,
+      order: 2
+    },
+    {
+      label: '7-day avg',
+      data: ma7,
+      borderColor: '#e8a04a',
+      backgroundColor: 'transparent',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      tension: 0.4,
+      fill: false,
+      order: 1
+    }
+  ];
+
+  if (startWeight !== null) {
+    datasets.push({
+      label: 'Start weight',
+      data: Array(entries.length).fill(startWeight),
+      borderColor: 'rgba(154,122,82,0.5)',
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderDash: [5, 5],
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      tension: 0,
+      fill: false,
+      order: 3
+    });
+  }
+
+  weightChartInst = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(45,32,16,0.92)',
+          borderColor: '#ecdcc8',
+          borderWidth: 1,
+          titleColor: '#9a7a52',
+          bodyColor: '#fdf8f2',
+          titleFont: { family: 'DM Mono', size: 10 },
+          bodyFont: { family: 'DM Mono', size: 11 },
+          callbacks: {
+            label: ctx => {
+              if (ctx.dataset.label === 'Start weight') return 'Start: ' + ctx.parsed.y + ' kg';
+              if (ctx.dataset.label === '7-day avg') return '7d avg: ' + ctx.parsed.y + ' kg';
+              return 'Weight: ' + ctx.parsed.y + ' kg';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(236,220,200,0.25)' },
+          ticks: { color: '#9a7a52', font: { family: 'DM Mono', size: 9 }, maxRotation: 45, maxTicksLimit: 10 }
+        },
+        y: {
+          grid: { color: 'rgba(236,220,200,0.25)' },
+          ticks: { color: '#9a7a52', font: { family: 'DM Mono', size: 9 }, callback: v => v + ' kg' }
+        }
+      }
+    }
+  });
+}
+
+function calc7DayTrend(log) {
+  if (log.length < 2) return null;
+  const sorted = [...log].sort((a, b) => a.date.localeCompare(b.date));
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 14);
+  const cutoffStr = cutoff.getFullYear() + '-' + pad(cutoff.getMonth() + 1) + '-' + pad(cutoff.getDate());
+
+  let recent = sorted.filter(e => e.date >= cutoffStr);
+  if (recent.length < 2) recent = sorted.slice(-Math.min(sorted.length, 7));
+  if (recent.length < 2) return null;
+
+  const first = recent[0];
+  const last = recent[recent.length - 1];
+  const days = (new Date(last.date + 'T00:00:00') - new Date(first.date + 'T00:00:00')) / 86400000;
+  if (days === 0) return null;
+  return ((last.weight - first.weight) / days) * 7;
+}
+
+function renderWeightStats() {
+  const log = getWeightLog().sort((a, b) => a.date.localeCompare(b.date));
+
+  const currentEl = document.getElementById('wStatCurrent');
+  const startEl = document.getElementById('wStatStart');
+  const changeEl = document.getElementById('wStatChange');
+  const trendEl = document.getElementById('wStat7Day');
+
+  if (log.length === 0) {
+    [currentEl, startEl, changeEl, trendEl].forEach(el => { if (el) { el.textContent = '—'; el.style.color = ''; } });
+    return;
+  }
+
+  const current = log[log.length - 1].weight;
+  const start = log[0].weight;
+  const change = Math.round((current - start) * 10) / 10;
+
+  if (currentEl) currentEl.textContent = current;
+  if (startEl) startEl.textContent = start;
+
+  if (changeEl) {
+    changeEl.textContent = (change > 0 ? '+' : '') + change;
+    changeEl.style.color = change < 0 ? '#4ade80' : change > 0 ? 'var(--red)' : 'var(--accent)';
+  }
+
+  if (trendEl) {
+    const trend = calc7DayTrend(log);
+    if (trend === null) {
+      trendEl.textContent = '—';
+      trendEl.style.color = '';
+    } else {
+      const r = Math.round(trend * 10) / 10;
+      trendEl.textContent = (r > 0 ? '+' : '') + r;
+      trendEl.style.color = r < 0 ? '#4ade80' : r > 0 ? 'var(--red)' : 'var(--accent)';
+    }
+  }
+}
+
+function renderWeightWidget() {
+  const container = document.getElementById('weightWidgetContent');
+  if (!container) return;
+
+  const log = getWeightLog().sort((a, b) => a.date.localeCompare(b.date));
+  const todayStr = todayDateStr();
+  const todayEntry = log.find(e => e.date === todayStr);
+
+  if (todayEntry) {
+    container.innerHTML = `
+      <div class="weight-today-val">${todayEntry.weight}<span style="font-size:1rem;font-weight:400;margin-left:2px;">kg</span></div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:3px;">logged today</div>
+      <div class="weight-quick-form">
+        <input type="number" id="weightQuickInput" placeholder="Update kg" step="0.1" min="1">
+        <button class="weight-quick-btn" onclick="saveWeightQuick()">Save</button>
+      </div>`;
+  } else {
+    const lastEntry = log.length > 0 ? log[log.length - 1] : null;
+    const lastText = lastEntry
+      ? 'Last: ' + lastEntry.weight + ' kg on ' + new Date(lastEntry.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      : 'No entries yet — log below';
+    container.innerHTML = `
+      <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted);margin-bottom:8px;">${lastText}</div>
+      <div class="weight-quick-form">
+        <input type="number" id="weightQuickInput" placeholder="Today's weight (kg)" step="0.1" min="1">
+        <button class="weight-quick-btn" onclick="saveWeightQuick()">Log</button>
+      </div>`;
+  }
+}
+
 // ── Close modals on overlay click ─────────────────────────────────────────────
 
 document.getElementById('calendarModal').addEventListener('click', e => {
@@ -1271,3 +1561,4 @@ updateDateDisplay();
 loadState();
 initTemplates();
 populateProgressDropdown();
+renderWeightWidget();
