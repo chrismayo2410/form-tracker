@@ -20,6 +20,13 @@
 #templateSaveWrap{display:none;align-items:center;gap:6px;margin-top:6px;}
 #templateSaveWrap input{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-family:'DM Mono',monospace;font-size:0.8rem;}
 #templateSaveWrap input:focus{outline:none;border-color:var(--accent);}
+.date-nav-wrap{display:flex;align-items:center;gap:8px;}
+.date-nav-btn{background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;font-size:0.85rem;padding:3px 9px;border-radius:6px;line-height:1.4;transition:background 0.15s,color 0.15s,border-color 0.15s;}
+.date-nav-btn:hover:not(:disabled){background:var(--bg3);border-color:var(--accent);color:var(--text);}
+.date-nav-btn:disabled{opacity:0.25;cursor:not-allowed;}
+.past-date-banner{display:none;align-items:center;justify-content:space-between;gap:12px;background:rgba(200,240,96,0.05);border:1px solid rgba(200,240,96,0.18);border-radius:8px;padding:8px 14px;margin:0 0 10px 0;font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted);}
+.banner-back-btn{background:none;border:1px solid rgba(200,240,96,0.3);color:var(--accent);cursor:pointer;font-family:'DM Mono',monospace;font-size:0.72rem;padding:4px 10px;border-radius:6px;white-space:nowrap;transition:background 0.15s,border-color 0.15s;}
+.banner-back-btn:hover{background:rgba(200,240,96,0.08);border-color:var(--accent);}
 </style>
 </head>
 <body>
@@ -50,7 +57,11 @@
 <header>
   <div class="top-bar-left">
     <div class="top-bar-greeting" id="greetingText">Good morning, Chris</div>
-    <div class="date-display" id="dateDisplay"></div>
+    <div class="date-nav-wrap">
+      <button class="date-nav-btn" id="datePrev" onclick="navigateDate(-1)">←</button>
+      <div class="date-display" id="dateDisplay"></div>
+      <button class="date-nav-btn" id="dateNext" onclick="navigateDate(1)" disabled>→</button>
+    </div>
   </div>
   <div class="top-bar-streak">
     <span class="streak-flame">🔥</span>
@@ -58,6 +69,11 @@
     <span class="streak-text">day streak</span>
   </div>
 </header>
+
+<div id="pastDateBanner" class="past-date-banner">
+  <span id="bannerMsg">Viewing past date</span>
+  <button class="banner-back-btn" onclick="returnToToday()">Back to today →</button>
+</div>
 
 <div class="main">
   <!-- SIDEBAR: INPUT -->
@@ -436,11 +452,21 @@
 
 (function() {
   try {
-    var hist = JSON.parse(localStorage.getItem('formTrackerHistory') || '{}');
     var streak = 0;
     var check = new Date();
     for (var i = 0; i < 365; i++) {
-      if (hist[check.toDateString()]) { streak++; check.setDate(check.getDate() - 1); }
+      var y = check.getFullYear();
+      var m = String(check.getMonth() + 1).padStart(2, '0');
+      var d = String(check.getDate()).padStart(2, '0');
+      var raw = localStorage.getItem('trackerData-' + y + '-' + m + '-' + d);
+      var hasData = false;
+      if (raw) {
+        try {
+          var data = JSON.parse(raw);
+          hasData = (data.foods && data.foods.length > 0) || data.steps != null;
+        } catch(e2) {}
+      }
+      if (hasData) { streak++; check.setDate(check.getDate() - 1); }
       else break;
     }
     var el = document.getElementById('streakCount');

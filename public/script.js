@@ -11,93 +11,148 @@ let state = {
   activityNotes: ''
 };
 
+// ── Date helpers ───────────────────────────────────────────────────────────────
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function todayDateStr() {
+  const now = new Date();
+  return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+}
+
+let selectedDate = todayDateStr();
+
+function isViewingToday() {
+  return selectedDate === todayDateStr();
+}
+
+function getStorageKey(dateStr) {
+  return 'trackerData-' + (dateStr || selectedDate);
+}
+
 // ── Storage ──────────────────────────────────────────────────────────────────
 
-function todayKey() {
-  return new Date().toDateString();
-}
-
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem('formTrackerHistory') || '{}'); } catch(e) { return {}; }
-}
-
-function saveHistory(history) {
-  try { localStorage.setItem('formTrackerHistory', JSON.stringify(history)); } catch(e) {}
-}
-
-function saveToHistory() {
-  const history = loadHistory();
-  const snapshot = {
-    foods: state.foods,
-    steps: state.steps,
-    sleep: state.sleep,
-    workout: state.workout,
-    activityNotes: state.activityNotes
-  };
-  history[todayKey()] = snapshot;
-  saveHistory(history);
-  // Keep a rolling "prev" snapshot so rollover logic can commit it
-  // if the date changes while the page stays open.
-  try { localStorage.setItem('formTrackerPrev', JSON.stringify(snapshot)); } catch(e) {}
-}
-
-function loadState() {
+function loadDayData() {
   try {
-    // Rollover: if the app was open yesterday and data was logged, ensure it's
-    // committed to history under the correct date key before we start today.
-    const lastActive = localStorage.getItem('formTrackerLastDate');
-    if (lastActive && lastActive !== todayKey()) {
-      // Load yesterday's in-flight state and persist it, then start fresh.
-      const history = loadHistory();
-      if (!history[lastActive]) {
-        const prev = localStorage.getItem('formTrackerPrev');
-        if (prev) {
-          try { history[lastActive] = JSON.parse(prev); saveHistory(history); } catch(e) {}
-        }
-      }
-      // Clear the in-flight prev snapshot now that it's committed.
-      localStorage.removeItem('formTrackerPrev');
-    }
-    localStorage.setItem('formTrackerLastDate', todayKey());
-
-    const saved = localStorage.getItem('formTracker');
-    const today = todayKey();
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.targets) state.targets = { ...state.targets, ...parsed.targets };
-      // migrate old per-day data into history if it's from today
-      if (parsed.date === today && parsed.foods) {
-        state.foods = parsed.foods || [];
-        state.steps = parsed.steps ?? null;
-        state.sleep = parsed.sleep ?? null;
-        state.workout = parsed.workout || '';
-        state.activityNotes = parsed.activityNotes || '';
-        saveToHistory();
-      }
-    }
-    // load today from history
-    const history = loadHistory();
-    if (history[today]) {
-      const d = history[today];
+    const raw = localStorage.getItem(getStorageKey());
+    if (raw) {
+      const d = JSON.parse(raw);
       state.foods = d.foods || [];
       state.steps = d.steps ?? null;
       state.sleep = d.sleep ?? null;
       state.workout = d.workout || '';
       state.activityNotes = d.activityNotes || '';
+    } else {
+      state.foods = [];
+      state.steps = null;
+      state.sleep = null;
+      state.workout = '';
+      state.activityNotes = '';
+    }
+  } catch(e) {
+    state.foods = [];
+    state.steps = null;
+    state.sleep = null;
+    state.workout = '';
+    state.activityNotes = '';
+  }
+  const si = document.getElementById('stepsInput');
+  const sl = document.getElementById('sleepInput');
+  const wt = document.getElementById('workoutType');
+  const an = document.getElementById('activityNotes');
+  if (si) si.value = state.steps != null ? state.steps : '';
+  if (sl) sl.value = state.sleep != null ? state.sleep : '';
+  if (wt) wt.value = state.workout || '';
+  if (an) an.value = state.activityNotes || '';
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('formTracker');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.targets) state.targets = { ...state.targets, ...parsed.targets };
     }
   } catch(e) {}
+  loadDayData();
   loadTargetInputs();
   renderAll();
 }
 
 function saveState() {
   try {
-    localStorage.setItem('formTracker', JSON.stringify({
-      date: todayKey(),
-      targets: state.targets
+    localStorage.setItem('formTracker', JSON.stringify({ targets: state.targets }));
+  } catch(e) {}
+  try {
+    localStorage.setItem(getStorageKey(), JSON.stringify({
+      foods: state.foods,
+      steps: state.steps,
+      sleep: state.sleep,
+      workout: state.workout,
+      activityNotes: state.activityNotes
     }));
   } catch(e) {}
-  saveToHistory();
+}
+
+// ── Date navigation ────────────────────────────────────────────────────────────
+
+function navigateDate(delta) {
+  const d = new Date(selectedDate + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  const newDate = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  if (newDate > todayDateStr()) return;
+  selectedDate = newDate;
+  loadDayData();
+  renderAll();
+  updateDateDisplay();
+  syncWorkoutToDate();
+}
+
+function returnToToday() {
+  selectedDate = todayDateStr();
+  loadDayData();
+  renderAll();
+  updateDateDisplay();
+  syncWorkoutToDate();
+}
+
+function syncWorkoutToDate() {
+  const workoutTab = document.getElementById('tab-workout');
+  if (!workoutTab || !workoutTab.classList.contains('active')) return;
+  currentWorkoutType = '';
+  document.querySelectorAll('.wo-type-btn').forEach(b => b.classList.remove('active'));
+  const workouts = loadWorkouts();
+  const saved = workouts[selectedDate];
+  if (saved?.type && WORKOUT_PLANS[saved.type]) {
+    currentWorkoutType = saved.type;
+    document.querySelectorAll('.wo-type-btn').forEach(btn => {
+      if (btn.textContent === saved.type) btn.classList.add('active');
+    });
+    renderExerciseList(saved.type);
+  } else {
+    document.getElementById('exerciseList').innerHTML = '<div class="wo-no-type">Select a workout type above</div>';
+  }
+}
+
+function updateDateDisplay() {
+  const d = new Date(selectedDate + 'T00:00:00');
+  const isToday = isViewingToday();
+
+  document.getElementById('dateDisplay').textContent = d.toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  const nextBtn = document.getElementById('dateNext');
+  if (nextBtn) nextBtn.disabled = isToday;
+
+  const banner = document.getElementById('pastDateBanner');
+  if (banner) {
+    banner.style.display = isToday ? 'none' : 'flex';
+    if (!isToday) {
+      const bannerMsg = document.getElementById('bannerMsg');
+      if (bannerMsg) bannerMsg.textContent = 'Viewing ' + d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+  }
 }
 
 // ── Targets ───────────────────────────────────────────────────────────────────
@@ -218,7 +273,7 @@ function renderMacroDonut() {
   const overallPct = Math.round((pPct + cPct + fPct + kPct) / 4);
 
   const gapSize   = 3;
-  const macroUnits = (100 - 4 * gapSize) / 4; // 22 units per macro
+  const macroUnits = (100 - 4 * gapSize) / 4;
 
   const donutData = [
     pPct / 100 * macroUnits, (1 - pPct / 100) * macroUnits, gapSize,
@@ -301,16 +356,23 @@ function setWeeklyMetric(metric, btn) {
 }
 
 function getWeeklyData() {
-  const history = loadHistory();
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const key = d.toDateString();
+    const dateStr = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     const isToday = i === 0;
-    const dayData = isToday
-      ? { foods: state.foods, steps: state.steps }
-      : (history[key] || null);
+    const isSelected = dateStr === selectedDate;
+
+    let dayData = null;
+    if (isSelected) {
+      dayData = { foods: state.foods, steps: state.steps };
+    } else {
+      try {
+        const raw = localStorage.getItem('trackerData-' + dateStr);
+        if (raw) dayData = JSON.parse(raw);
+      } catch(e) {}
+    }
 
     let kcal = 0, protein = 0;
     if (dayData?.foods) {
@@ -422,7 +484,8 @@ function deleteFood(idx) {
 }
 
 function clearLog() {
-  if (confirm('Clear all food entries for today?')) {
+  const msg = isViewingToday() ? 'Clear all food entries for today?' : 'Clear all food entries for this day?';
+  if (confirm(msg)) {
     state.foods = [];
     saveState();
     renderAll();
@@ -577,13 +640,6 @@ function goToTargets() {
   });
 }
 
-// ── Date display ──────────────────────────────────────────────────────────────
-
-function updateDate() {
-  const now = new Date();
-  document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-}
-
 // ── Calendar ──────────────────────────────────────────────────────────────────
 
 let calYear, calMonth;
@@ -616,7 +672,6 @@ function calNextMonth() {
 }
 
 function renderCalendar() {
-  const history = loadHistory();
   const now = new Date();
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -634,28 +689,38 @@ function renderCalendar() {
 
   for (let d = 1; d <= daysInMonth; d++) {
     const dateObj = new Date(calYear, calMonth, d);
-    const dateKey = dateObj.toDateString();
-    const isToday = dateKey === now.toDateString();
-    const hasData = !!history[dateKey] && (
-      (history[dateKey].foods && history[dateKey].foods.length > 0) ||
-      history[dateKey].steps != null
-    );
+    const dateStr = dateObj.getFullYear() + '-' + pad(dateObj.getMonth() + 1) + '-' + pad(dateObj.getDate());
+    const isToday = dateObj.toDateString() === now.toDateString();
+    let hasData = false;
+    try {
+      const raw = localStorage.getItem('trackerData-' + dateStr);
+      if (raw) {
+        const data = JSON.parse(raw);
+        hasData = (data.foods && data.foods.length > 0) || data.steps != null;
+      }
+    } catch(e) {}
     const classes = ['cal-day', hasData ? 'has-data' : '', isToday ? 'today' : ''].filter(Boolean).join(' ');
     const dot = hasData ? '<div class="dot"></div>' : '';
-    html += `<div class="${classes}" onclick="showDayDetail('${dateKey}')">${d}${dot}</div>`;
+    html += `<div class="${classes}" onclick="showDayDetail('${dateStr}')">${d}${dot}</div>`;
   }
 
   document.getElementById('calGrid').innerHTML = html;
 }
 
-function showDayDetail(dateKey) {
-  const history = loadHistory();
-  const data = history[dateKey];
+function showDayDetail(dateStr) {
+  let data = null;
+  try {
+    const raw = localStorage.getItem('trackerData-' + dateStr);
+    if (raw) data = JSON.parse(raw);
+  } catch(e) {}
+
+  const d = new Date(dateStr + 'T00:00:00');
+  const displayDate = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const detail = document.getElementById('dayDetail');
 
   if (!data || ((!data.foods || data.foods.length === 0) && data.steps == null && data.sleep == null)) {
     detail.style.display = 'block';
-    detail.innerHTML = `<div class="day-detail-title">${dateKey}</div><div style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--muted);">No data logged for this day.</div>`;
+    detail.innerHTML = `<div class="day-detail-title">${displayDate}</div><div style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--muted);">No data logged for this day.</div>`;
     return;
   }
 
@@ -696,7 +761,7 @@ function showDayDetail(dateKey) {
 
   detail.style.display = 'block';
   detail.innerHTML = `
-    <div class="day-detail-title">${dateKey}</div>
+    <div class="day-detail-title">${displayDate}</div>
     ${statsHtml}
     ${workoutHtml}
     ${foodHtml}
@@ -895,7 +960,7 @@ function getLastLogged(name) {
 }
 
 function getTodayWo() {
-  return loadWorkouts()[todayKey()] || { type: '', exercises: {} };
+  return loadWorkouts()[selectedDate] || { type: '', exercises: {} };
 }
 
 function addSet(name) {
@@ -907,10 +972,9 @@ function addSet(name) {
   if (!weight || !reps || weight <= 0 || reps <= 0) { alert('Enter a valid weight and rep count.'); return; }
 
   const workouts = loadWorkouts();
-  const today = todayKey();
-  if (!workouts[today]) workouts[today] = { type: currentWorkoutType, exercises: {} };
-  if (!workouts[today].exercises[name]) workouts[today].exercises[name] = [];
-  workouts[today].exercises[name].push({ weight, reps });
+  if (!workouts[selectedDate]) workouts[selectedDate] = { type: currentWorkoutType, exercises: {} };
+  if (!workouts[selectedDate].exercises[name]) workouts[selectedDate].exercises[name] = [];
+  workouts[selectedDate].exercises[name].push({ weight, reps });
   saveWorkouts(workouts);
 
   wEl.value = '';
@@ -920,7 +984,7 @@ function addSet(name) {
 
 function deleteSet(name, idx) {
   const workouts = loadWorkouts();
-  const sets = workouts[todayKey()]?.exercises?.[name];
+  const sets = workouts[selectedDate]?.exercises?.[name];
   if (!sets) return;
   sets.splice(idx, 1);
   saveWorkouts(workouts);
@@ -955,9 +1019,8 @@ function selectWorkoutType(type, btn) {
   btn.classList.add('active');
 
   const workouts = loadWorkouts();
-  const today = todayKey();
-  if (!workouts[today]) workouts[today] = { type, exercises: {} };
-  else workouts[today].type = type;
+  if (!workouts[selectedDate]) workouts[selectedDate] = { type, exercises: {} };
+  else workouts[selectedDate].type = type;
   saveWorkouts(workouts);
 
   renderExerciseList(type);
@@ -1004,7 +1067,7 @@ function renderExerciseList(type) {
 
 function populateProgressDropdown() {
   const sel = document.getElementById('progressExSelect');
-  if (sel.querySelectorAll('optgroup').length > 0) return; // already populated
+  if (sel.querySelectorAll('optgroup').length > 0) return;
   Object.entries(WORKOUT_PLANS).forEach(([type, exercises]) => {
     const grp = document.createElement('optgroup');
     grp.label = type;
@@ -1094,10 +1157,10 @@ function renderProgressChart() {
 
 function initWorkoutTab() {
   populateProgressDropdown();
-  initWorkoutTab = () => {}; // run once; dropdown is already populated after first call
+  initWorkoutTab = () => {};
 
   const workouts = loadWorkouts();
-  const saved = workouts[todayKey()];
+  const saved = workouts[selectedDate];
   if (saved?.type && WORKOUT_PLANS[saved.type]) {
     currentWorkoutType = saved.type;
     document.querySelectorAll('.wo-type-btn').forEach(btn => {
@@ -1204,7 +1267,7 @@ document.getElementById('mealsModal').addEventListener('click', e => {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-updateDate();
+updateDateDisplay();
 loadState();
 initTemplates();
 populateProgressDropdown();
