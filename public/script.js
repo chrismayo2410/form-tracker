@@ -1107,6 +1107,92 @@ function initWorkoutTab() {
   }
 }
 
+// ── Meal templates ────────────────────────────────────────────────────────────
+
+const DEFAULT_TEMPLATES = [
+  { id: 1, name: 'Overnight oats',   meal: 'Breakfast', kcal: 565, protein: 56, carbs: 55, fat: 11 },
+  { id: 2, name: 'Clear whey shake', meal: 'Snack',     kcal: 110, protein: 20, carbs: 2,  fat: 0  },
+  { id: 3, name: 'Chicken and rice', meal: 'Lunch',     kcal: 490, protein: 55, carbs: 45, fat: 8  }
+];
+
+function loadTemplates() {
+  try {
+    const raw = localStorage.getItem('mealTemplates');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function saveTemplates(templates) {
+  try { localStorage.setItem('mealTemplates', JSON.stringify(templates)); } catch(e) {}
+}
+
+function initTemplates() {
+  if (loadTemplates() === null) saveTemplates(DEFAULT_TEMPLATES);
+  renderTemplates();
+}
+
+function renderTemplates() {
+  const templates = loadTemplates() || [];
+  const container = document.getElementById('templatePills');
+  if (!container) return;
+  if (templates.length === 0) {
+    container.innerHTML = '<span style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted);">No templates yet — save one above</span>';
+    return;
+  }
+  container.innerHTML = templates.map(t => `
+    <div class="template-pill" onclick="applyTemplate(${t.id})">
+      <span class="template-pill-name">${t.name}</span>
+      <span class="template-pill-kcal">${t.kcal} kcal</span>
+      <button class="template-pill-del" onclick="event.stopPropagation();deleteTemplate(${t.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function applyTemplate(id) {
+  const templates = loadTemplates() || [];
+  const t = templates.find(t => t.id === id);
+  if (!t) return;
+  state.foods.push({ name: t.name, meal: t.meal, kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat });
+  saveState();
+  renderAll();
+}
+
+function deleteTemplate(id) {
+  const templates = (loadTemplates() || []).filter(t => t.id !== id);
+  saveTemplates(templates);
+  renderTemplates();
+}
+
+function showSaveTemplate() {
+  document.getElementById('saveTemplateBtn').style.display = 'none';
+  const wrap = document.getElementById('templateSaveWrap');
+  wrap.style.display = 'flex';
+  const nameInput = document.getElementById('templateNameInput');
+  nameInput.value = document.getElementById('foodDesc').value.trim();
+  nameInput.focus();
+  nameInput.select();
+}
+
+function cancelSaveTemplate() {
+  document.getElementById('templateSaveWrap').style.display = 'none';
+  document.getElementById('saveTemplateBtn').style.display = '';
+}
+
+function confirmSaveTemplate() {
+  const name = document.getElementById('templateNameInput').value.trim();
+  if (!name) { document.getElementById('templateNameInput').focus(); return; }
+  const kcal    = parseFloat(document.getElementById('manualKcal').value) || 0;
+  const protein = parseFloat(document.getElementById('manualP').value)    || 0;
+  const carbs   = parseFloat(document.getElementById('manualC').value)    || 0;
+  const fat     = parseFloat(document.getElementById('manualF').value)    || 0;
+  const meal    = document.getElementById('mealType').value;
+  const templates = loadTemplates() || [];
+  templates.push({ id: Date.now(), name, meal, kcal, protein, carbs, fat });
+  saveTemplates(templates);
+  renderTemplates();
+  cancelSaveTemplate();
+}
+
 // ── Close modals on overlay click ─────────────────────────────────────────────
 
 document.getElementById('calendarModal').addEventListener('click', e => {
@@ -1120,4 +1206,5 @@ document.getElementById('mealsModal').addEventListener('click', e => {
 
 updateDate();
 loadState();
+initTemplates();
 populateProgressDropdown();
