@@ -27,6 +27,12 @@
 .past-date-banner{display:none;align-items:center;justify-content:space-between;gap:12px;background:rgba(200,240,96,0.05);border:1px solid rgba(200,240,96,0.18);border-radius:8px;padding:8px 14px;margin:0 0 10px 0;font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted);}
 .banner-back-btn{background:none;border:1px solid rgba(200,240,96,0.3);color:var(--accent);cursor:pointer;font-family:'DM Mono',monospace;font-size:0.72rem;padding:4px 10px;border-radius:6px;white-space:nowrap;transition:background 0.15s,border-color 0.15s;}
 .banner-back-btn:hover{background:rgba(200,240,96,0.08);border-color:var(--accent);}
+.editable-cell{cursor:pointer;border-bottom:1px dashed var(--muted);transition:color 0.15s,border-color 0.15s;}
+.editable-cell:hover{color:var(--accent);border-bottom-color:var(--accent);}
+.inv-inline-edit{width:72px;background:var(--bg3);border:1px solid var(--accent);color:var(--text);border-radius:4px;padding:3px 5px;font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;}
+.reselling-fees-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.fees-toggle-label{display:flex;align-items:center;gap:7px;font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted);cursor:pointer;user-select:none;}
+.fees-toggle-label input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -519,6 +525,16 @@
       <label>Date purchased</label>
       <input type="date" id="resellingDatePurchased">
     </div>
+    <div class="grid-2">
+      <div class="input-group">
+        <label>Listed price (£) <span style="font-size:0.65rem;color:var(--muted);font-weight:400;">(optional)</span></label>
+        <input type="number" id="resellingListedPrice" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="input-group">
+        <label>Sold price (£) <span style="font-size:0.65rem;color:var(--muted);font-weight:400;">(optional)</span></label>
+        <input type="number" id="resellingSoldPrice" placeholder="0.00" step="0.01" min="0">
+      </div>
+    </div>
     <div class="reselling-btn-row">
       <button class="secondary" id="ebaySearchBtn" onclick="searchEbayPrices()">Search eBay prices</button>
       <button class="primary" onclick="addResellingItem()">Add to inventory</button>
@@ -528,6 +544,12 @@
 
   <div class="reselling-inventory-card">
     <div class="section-title">Inventory</div>
+    <div class="reselling-fees-row">
+      <label class="fees-toggle-label">
+        <input type="checkbox" id="ebayFeesToggle" onchange="toggleEbayFees(this)">
+        Include eBay fees (12.8%)
+      </label>
+    </div>
     <div id="resellingInventoryWrap">
       <div class="inventory-empty">No items yet — add your first item above</div>
     </div>
