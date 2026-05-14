@@ -365,3 +365,57 @@
     .weight-stats-row { grid-template-columns: repeat(2, 1fr); }
     .weight-page { padding: 1rem; }
   }
+
+  /* RESELLING PAGE */
+  .reselling-page { flex-direction: column; gap: 1.5rem; padding: 1.5rem; flex: 1; overflow-y: auto; }
+  .reselling-page::-webkit-scrollbar { width: 4px; }
+  .reselling-page::-webkit-scrollbar-thumb { background: var(--border2); }
+  .reselling-add-card, .reselling-inventory-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .reselling-btn-row { display: flex; gap: 8px; margin-top: 4px; }
+  .reselling-btn-row button.primary, .reselling-btn-row button.secondary { flex: 1; width: auto; margin-top: 0; }
+
+  /* eBay price search result */
+  .ebay-loading { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); padding: 10px 0; }
+  .ebay-error { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--red); padding: 8px 0; }
+  .ebay-prices-list { display: flex; flex-direction: column; gap: 4px; margin: 10px 0 6px; }
+  .ebay-price-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: var(--bg3); border-radius: 6px; gap: 12px; }
+  .ebay-price-title { font-family: 'DM Mono', monospace; font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); flex: 1; }
+  .ebay-price-val { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--accent); font-weight: 500; flex-shrink: 0; }
+  .ebay-avg-banner { display: flex; justify-content: space-between; align-items: center; background: rgba(232,160,74,0.08); border: 1px solid rgba(232,160,74,0.25); border-radius: 8px; padding: 10px 14px; margin-top: 8px; }
+  .ebay-avg-label { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+  .ebay-avg-val { font-family: 'DM Mono', monospace; font-size: 1.15rem; font-weight: 500; color: var(--accent); }
+  .ebay-no-results { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); padding: 8px 0; }
+
+  /* Inventory summary stat cards */
+  .inventory-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .inv-stat { background: var(--bg3); border-radius: 8px; padding: 0.9rem 1rem; }
+  .inv-stat-val { font-family: 'DM Mono', monospace; font-size: 1.3rem; font-weight: 500; line-height: 1; color: var(--accent); }
+  .inv-stat-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 5px; }
+
+  /* Inventory table */
+  .inventory-table-wrap { overflow-x: auto; }
+  .inventory-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 720px; }
+  .inventory-table th { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+  .inventory-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+  .inventory-table tbody tr:last-child td { border-bottom: none; }
+  .inventory-table tbody tr:hover td { background: var(--bg3); }
+  .inv-item-name { font-weight: 500; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .inv-price { font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+  .inv-profit { font-family: 'DM Mono', monospace; font-size: 0.8rem; font-weight: 500; }
+  .inv-profit.positive { color: #4ade80; }
+  .inv-profit.negative { color: var(--red); }
+  .inv-margin { font-family: 'DM Mono', monospace; font-size: 0.78rem; }
+  .inv-status-select { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; padding: 4px 8px; cursor: pointer; outline: none; transition: border-color 0.15s, color 0.15s; width: auto; }
+  .inv-status-select:focus { border-color: var(--accent); }
+  .inv-status-select.status-listed { border-color: var(--accent); color: var(--accent); }
+  .inv-status-select.status-sold { border-color: #4ade80; color: #4ade80; }
+  .inv-del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 4px 6px; border-radius: 6px; transition: color 0.15s; line-height: 1; }
+  .inv-del-btn:hover { color: var(--red); }
+  .inv-ebay-fetch { background: none; border: 1px solid var(--border2); color: var(--muted); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; transition: all 0.15s; white-space: nowrap; }
+  .inv-ebay-fetch:hover { border-color: var(--accent); color: var(--accent); }
+  .inventory-empty { font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--muted); text-align: center; padding: 2.5rem 0; }
+
+  @media (max-width: 900px) {
+    .reselling-page { padding: 1rem; }
+    .inventory-summary { grid-template-columns: repeat(2, 1fr); }
+  }

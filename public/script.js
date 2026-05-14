@@ -1273,6 +1273,7 @@ let weightChartInst = null;
 
 function switchToWeightPage() {
   document.getElementById('weightPage').style.display = 'flex';
+  document.getElementById('resellingPage').style.display = 'none';
   document.querySelector('.main').style.display = 'none';
   document.getElementById('pastDateBanner').style.display = 'none';
   const dateInput = document.getElementById('weightDate');
@@ -1283,6 +1284,7 @@ function switchToWeightPage() {
 
 function switchToOverview() {
   document.getElementById('weightPage').style.display = 'none';
+  document.getElementById('resellingPage').style.display = 'none';
   document.querySelector('.main').style.display = '';
   updateDateDisplay();
 }
@@ -1544,6 +1546,284 @@ function renderWeightWidget() {
         <button class="weight-quick-btn" onclick="saveWeightQuick()">Log</button>
       </div>`;
   }
+}
+
+// ── Reselling tracker ─────────────────────────────────────────────────────────
+
+function switchToReselling() {
+  document.getElementById('resellingPage').style.display = 'flex';
+  document.getElementById('weightPage').style.display = 'none';
+  document.querySelector('.main').style.display = 'none';
+  document.getElementById('pastDateBanner').style.display = 'none';
+  const dateInput = document.getElementById('resellingDatePurchased');
+  if (dateInput && !dateInput.value) dateInput.value = todayDateStr();
+  renderResellingInventory();
+}
+
+function getResellingInventory() {
+  try {
+    const raw = localStorage.getItem('resellingInventory');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveResellingInventory(inv) {
+  try { localStorage.setItem('resellingInventory', JSON.stringify(inv)); } catch(e) {}
+}
+
+async function searchEbayPrices() {
+  const itemName = document.getElementById('resellingItemName').value.trim();
+  if (!itemName) { alert('Please enter an item name first.'); return; }
+
+  const resultEl = document.getElementById('ebaySearchResult');
+  const btn = document.getElementById('ebaySearchBtn');
+
+  btn.disabled = true;
+  btn.textContent = 'Searching…';
+  resultEl.innerHTML = `
+    <div class="ebay-loading">
+      <div class="dot-pulse"><span></span><span></span><span></span></div>
+      <span>Searching eBay...</span>
+    </div>`;
+
+  try {
+    const res = await fetch('/api/ebay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemName })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      resultEl.innerHTML = `<div class="ebay-error">⚠ ${data.error}</div>`;
+      window._lastEbayAverage = null;
+      return;
+    }
+
+    if (!data.prices || data.prices.length === 0) {
+      resultEl.innerHTML = `<div class="ebay-no-results">${data.message || 'No results found on eBay.'}</div>`;
+      window._lastEbayAverage = null;
+      return;
+    }
+
+    window._lastEbayAverage = data.average;
+
+    const pricesHtml = data.prices.map(p => `
+      <div class="ebay-price-item">
+        <span class="ebay-price-title">${p.title}</span>
+        <span class="ebay-price-val">£${p.price.toFixed(2)}</span>
+      </div>`).join('');
+
+    resultEl.innerHTML = `
+      <div class="ebay-prices-list">${pricesHtml}</div>
+      ${data.average != null ? `
+        <div class="ebay-avg-banner">
+          <span class="ebay-avg-label">Average of ${data.prices.length} listing${data.prices.length !== 1 ? 's' : ''}</span>
+          <span class="ebay-avg-val">£${data.average.toFixed(2)}</span>
+        </div>` : ''}`;
+
+  } catch(e) {
+    resultEl.innerHTML = `<div class="ebay-error">⚠ Failed to reach the eBay API — check your server credentials.</div>`;
+    window._lastEbayAverage = null;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Search eBay prices';
+  }
+}
+
+function addResellingItem() {
+  const name = document.getElementById('resellingItemName').value.trim();
+  const purchasePrice = parseFloat(document.getElementById('resellingPurchasePrice').value);
+
+  if (!name) { alert('Please enter an item name.'); return; }
+  if (!purchasePrice || purchasePrice <= 0) { alert('Please enter a valid purchase price.'); return; }
+
+  const size = document.getElementById('resellingSize').value.trim();
+  const condition = document.getElementById('resellingCondition').value;
+  const platform = document.getElementById('resellingPlatform').value;
+  const datePurchased = document.getElementById('resellingDatePurchased').value || todayDateStr();
+
+  const inv = getResellingInventory();
+  inv.unshift({
+    id: Date.now(),
+    name,
+    purchasePrice,
+    size,
+    condition,
+    platform,
+    datePurchased,
+    dateAdded: new Date().toISOString(),
+    ebayAvgPrice: window._lastEbayAverage != null ? window._lastEbayAverage : null,
+    status: 'Holding'
+  });
+
+  saveResellingInventory(inv);
+
+  document.getElementById('resellingItemName').value = '';
+  document.getElementById('resellingPurchasePrice').value = '';
+  document.getElementById('resellingSize').value = '';
+  document.getElementById('ebaySearchResult').innerHTML = '';
+  window._lastEbayAverage = null;
+
+  renderResellingInventory();
+}
+
+function updateResellingStatus(id, status) {
+  const inv = getResellingInventory();
+  const item = inv.find(i => i.id === id);
+  if (item) {
+    item.status = status;
+    saveResellingInventory(inv);
+  }
+}
+
+function applyStatusStyle(sel, status) {
+  sel.className = 'inv-status-select';
+  if (status === 'Listed') sel.classList.add('status-listed');
+  else if (status === 'Sold') sel.classList.add('status-sold');
+}
+
+function deleteResellingItem(id) {
+  if (!confirm('Delete this item from your inventory?')) return;
+  saveResellingInventory(getResellingInventory().filter(i => i.id !== id));
+  renderResellingInventory();
+}
+
+async function fetchEbayPriceForItem(id) {
+  const inv = getResellingInventory();
+  const item = inv.find(i => i.id === id);
+  if (!item) return;
+
+  const cell = document.getElementById('ebay-cell-' + id);
+  if (cell) cell.innerHTML = '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;color:var(--muted);">…</span>';
+
+  try {
+    const res = await fetch('/api/ebay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemName: item.name })
+    });
+    const data = await res.json();
+
+    if (data.average != null) {
+      item.ebayAvgPrice = data.average;
+      saveResellingInventory(inv);
+      renderResellingInventory();
+    } else {
+      const msg = data.error || data.message || 'No prices found.';
+      if (cell) cell.innerHTML = `<button class="inv-ebay-fetch" onclick="fetchEbayPriceForItem(${id})">Fetch</button>`;
+      alert(msg);
+    }
+  } catch(e) {
+    if (cell) cell.innerHTML = `<button class="inv-ebay-fetch" onclick="fetchEbayPriceForItem(${id})">Fetch</button>`;
+    alert('Failed to fetch eBay prices.');
+  }
+}
+
+function renderResellingInventory() {
+  const wrap = document.getElementById('resellingInventoryWrap');
+  if (!wrap) return;
+
+  const inv = getResellingInventory();
+
+  if (inv.length === 0) {
+    wrap.innerHTML = '<div class="inventory-empty">No items yet — add your first item above</div>';
+    return;
+  }
+
+  const totalItems = inv.length;
+  const totalInvested = inv.reduce((s, i) => s + i.purchasePrice, 0);
+
+  const withEbay = inv.filter(i => i.ebayAvgPrice != null);
+  const totalProfit = withEbay.reduce((s, i) => s + (i.ebayAvgPrice - i.purchasePrice), 0);
+  const avgMargin = withEbay.length > 0
+    ? withEbay.reduce((s, i) => s + (i.purchasePrice > 0 ? ((i.ebayAvgPrice - i.purchasePrice) / i.purchasePrice) * 100 : 0), 0) / withEbay.length
+    : null;
+
+  const profitColor = totalProfit >= 0 ? '#4ade80' : 'var(--red)';
+  const marginColor = avgMargin != null ? (avgMargin >= 0 ? '#4ade80' : 'var(--red)') : 'var(--muted)';
+
+  const summaryHtml = `
+    <div class="inventory-summary">
+      <div class="inv-stat">
+        <div class="inv-stat-val">${totalItems}</div>
+        <div class="inv-stat-label">Total items</div>
+      </div>
+      <div class="inv-stat">
+        <div class="inv-stat-val">£${totalInvested.toFixed(2)}</div>
+        <div class="inv-stat-label">Total invested</div>
+      </div>
+      <div class="inv-stat">
+        <div class="inv-stat-val" style="color:${withEbay.length > 0 ? profitColor : 'var(--muted)'};">
+          ${withEbay.length > 0 ? (totalProfit >= 0 ? '+' : '') + '£' + totalProfit.toFixed(2) : '—'}
+        </div>
+        <div class="inv-stat-label">Est. profit</div>
+      </div>
+      <div class="inv-stat">
+        <div class="inv-stat-val" style="color:${marginColor};">
+          ${avgMargin != null ? (avgMargin >= 0 ? '+' : '') + avgMargin.toFixed(1) + '%' : '—'}
+        </div>
+        <div class="inv-stat-label">Avg margin</div>
+      </div>
+    </div>`;
+
+  const rowsHtml = inv.map(item => {
+    const profit = item.ebayAvgPrice != null ? item.ebayAvgPrice - item.purchasePrice : null;
+    const margin = profit != null && item.purchasePrice > 0 ? (profit / item.purchasePrice) * 100 : null;
+    const profitClass = profit != null ? (profit >= 0 ? 'positive' : 'negative') : '';
+    const profitDisplay = profit != null ? `${profit >= 0 ? '+' : ''}£${profit.toFixed(2)}` : '—';
+    const marginDisplay = margin != null ? `${margin >= 0 ? '+' : ''}${margin.toFixed(1)}%` : '—';
+    const marginCol = margin != null ? (margin >= 0 ? '#4ade80' : 'var(--red)') : 'var(--muted)';
+
+    const ebayDisplay = item.ebayAvgPrice != null
+      ? `£${item.ebayAvgPrice.toFixed(2)}`
+      : `<button class="inv-ebay-fetch" onclick="fetchEbayPriceForItem(${item.id})">Fetch</button>`;
+
+    const statusClass = item.status === 'Listed' ? 'status-listed' : item.status === 'Sold' ? 'status-sold' : '';
+
+    return `
+      <tr>
+        <td><span class="inv-item-name" title="${item.name}">${item.name}</span></td>
+        <td>${item.size || '—'}</td>
+        <td>${item.condition}</td>
+        <td class="inv-price">£${item.purchasePrice.toFixed(2)}</td>
+        <td class="inv-price" id="ebay-cell-${item.id}">${ebayDisplay}</td>
+        <td class="inv-profit ${profitClass}">${profitDisplay}</td>
+        <td class="inv-margin" style="color:${marginCol};">${marginDisplay}</td>
+        <td>${item.platform}</td>
+        <td>
+          <select class="inv-status-select ${statusClass}"
+            onchange="updateResellingStatus(${item.id}, this.value); applyStatusStyle(this, this.value);">
+            <option${item.status === 'Holding' ? ' selected' : ''}>Holding</option>
+            <option${item.status === 'Listed'  ? ' selected' : ''}>Listed</option>
+            <option${item.status === 'Sold'    ? ' selected' : ''}>Sold</option>
+          </select>
+        </td>
+        <td><button class="inv-del-btn" onclick="deleteResellingItem(${item.id})">✕</button></td>
+      </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    ${summaryHtml}
+    <div class="inventory-table-wrap">
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Size</th>
+            <th>Condition</th>
+            <th>Paid</th>
+            <th>eBay avg</th>
+            <th>Profit</th>
+            <th>Margin</th>
+            <th>Platform</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
 }
 
 // ── Close modals on overlay click ─────────────────────────────────────────────

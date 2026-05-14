@@ -4,6 +4,10 @@
     "api/analyse.js": {
       "memory": 256,
       "maxDuration": 30
+    },
+    "api/ebay.js": {
+      "memory": 256,
+      "maxDuration": 30
     }
   }
 }
