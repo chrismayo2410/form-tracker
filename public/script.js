@@ -1197,16 +1197,24 @@ function initTemplates() {
 function renderTemplates() {
   const templates = loadTemplates() || [];
   const container = document.getElementById('templatePills');
+  const countEl = document.getElementById('templatesCount');
   if (!container) return;
+  if (countEl) countEl.textContent = templates.length;
   if (templates.length === 0) {
-    container.innerHTML = '<span style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted);">No templates yet — save one above</span>';
+    container.innerHTML = '<div class="templates-empty">No templates yet — save one above</div>';
     return;
   }
   container.innerHTML = templates.map(t => `
-    <div class="template-pill" onclick="applyTemplate(${t.id})">
-      <span class="template-pill-name">${t.name}</span>
-      <span class="template-pill-kcal">${t.kcal} kcal</span>
-      <button class="template-pill-del" onclick="event.stopPropagation();deleteTemplate(${t.id})">✕</button>
+    <div class="template-card">
+      <div class="template-card-top">
+        <div>
+          <div class="template-card-name">${t.name}</div>
+          <span class="template-card-badge">${t.meal}</span>
+        </div>
+        <button class="template-card-del" onclick="deleteTemplate(${t.id})">✕</button>
+      </div>
+      <div class="template-card-macros">${t.kcal} kcal · P ${t.protein}g · C ${t.carbs}g · F ${t.fat}g</div>
+      <button class="template-card-add" onclick="applyTemplate(${t.id})">Add to log</button>
     </div>
   `).join('');
 }
@@ -1229,7 +1237,7 @@ function deleteTemplate(id) {
 function showSaveTemplate() {
   document.getElementById('saveTemplateBtn').style.display = 'none';
   const wrap = document.getElementById('templateSaveWrap');
-  wrap.style.display = 'flex';
+  wrap.style.display = 'block';
   const nameInput = document.getElementById('templateNameInput');
   nameInput.value = document.getElementById('foodDesc').value.trim();
   nameInput.focus();
