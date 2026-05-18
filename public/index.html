@@ -32,10 +32,9 @@
     <li class="left-nav-link active" onclick="switchToOverview();setNavActive(this)">🏠 <span>Overview</span></li>
     <li class="left-nav-link" id="navDashboard" onclick="switchToDashboard();setNavActive(this)">📊 <span>Dashboard</span></li>
     <li class="left-nav-link" onclick="switchTab('food');setNavActive(this)">🍽️ <span>Food</span></li>
-    <li class="left-nav-link" onclick="switchTab('steps');setNavActive(this)">👟 <span>Steps</span></li>
+    <li class="left-nav-link" onclick="switchTab('activity');setNavActive(this)">🏃 <span>Activity</span></li>
     <li class="left-nav-link" onclick="switchTab('targets');setNavActive(this)">🎯 <span>Targets</span></li>
     <li class="left-nav-link" onclick="switchTab('workout');setNavActive(this)">💪 <span>Workout</span></li>
-    <li class="left-nav-link" onclick="switchTab('steps');setNavActive(this)">😴 <span>Sleep</span></li>
     <li class="left-nav-link" onclick="openCalendar();setNavActive(this)">📅 <span>History</span></li>
     <li class="left-nav-link" onclick="openMeals();setNavActive(this)">💡 <span>Meal Ideas</span></li>
     <li class="left-nav-link" onclick="switchToWeightPage();setNavActive(this)">⚖️ <span>Weight</span></li>
@@ -142,14 +141,17 @@
       </div>
     </div>
 
-    <!-- STEPS TAB -->
-    <div class="tab-pane" id="tab-steps">
-      <div class="input-section">
-        <div class="section-title">Log steps & activity</div>
-        <div class="input-group">
+    <!-- ACTIVITY TAB -->
+    <div class="tab-pane" id="tab-activity">
+      <div class="input-section" style="margin-bottom:12px;">
+        <div class="section-title">Steps</div>
+        <div class="input-group" style="margin-bottom:0;">
           <label>Steps today</label>
           <input type="number" id="stepsInput" placeholder="8000" value="">
         </div>
+      </div>
+      <div class="input-section">
+        <div class="section-title">Sleep</div>
         <div class="input-group">
           <label>Sleep last night (hours)</label>
           <input type="number" id="sleepInput" placeholder="8" step="0.5" value="">
