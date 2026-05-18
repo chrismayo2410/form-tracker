@@ -257,6 +257,15 @@ function renderAll() {
   if (tpSteps) tpSteps.textContent = tgt.steps.toLocaleString();
   if (tpSleep) tpSleep.textContent = tgt.sleep + ' h';
 
+  const ovKcalBar = document.getElementById('ovKcalBar');
+  const ovProteinBar = document.getElementById('ovProteinBar');
+  const ovKcalCount = document.getElementById('ovKcalCount');
+  const ovProteinCount = document.getElementById('ovProteinCount');
+  if (ovKcalBar) ovKcalBar.style.width = barPct(Math.round(t.kcal), tgt.kcal) + '%';
+  if (ovProteinBar) ovProteinBar.style.width = barPct(Math.round(t.protein), tgt.protein) + '%';
+  if (ovKcalCount) ovKcalCount.textContent = Math.round(t.kcal) + ' / ' + tgt.kcal + ' kcal';
+  if (ovProteinCount) ovProteinCount.textContent = Math.round(t.protein) + ' / ' + tgt.protein + 'g';
+
   renderFoodLog();
   renderWeeklySummary();
   renderMacroDonut();
@@ -522,6 +531,9 @@ async function analyseFood() {
   const desc = document.getElementById('foodDesc').value.trim();
   if (!desc) { alert('Please describe the food first.'); return; }
 
+  const dashLink = document.getElementById('navDashboard');
+  if (dashLink) { switchToDashboard(); setNavActive(dashLink); }
+
   const loading = document.getElementById('aiLoading');
   const response = document.getElementById('aiResponse');
   loading.classList.add('visible');
@@ -613,6 +625,7 @@ function addFromAI() {
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
 function switchTab(id) {
+  switchToOverview();
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
@@ -627,11 +640,8 @@ function switchTab(id) {
 }
 
 function goToTargets() {
+  switchToOverview();
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('active');
-    if (b.textContent.trim() === 'Targets') b.classList.add('active');
-  });
   const pane = document.getElementById('tab-targets');
   if (pane) pane.classList.add('active');
   document.querySelectorAll('.left-nav-link').forEach(l => {
@@ -1279,8 +1289,19 @@ function saveWeightLog(log) {
 
 let weightChartInst = null;
 
+function switchToDashboard() {
+  document.getElementById('dashboardPage').style.display = 'flex';
+  document.getElementById('weightPage').style.display = 'none';
+  document.getElementById('resellingPage').style.display = 'none';
+  document.querySelector('.main').style.display = 'none';
+  document.getElementById('pastDateBanner').style.display = 'none';
+  if (macroDonutChart) macroDonutChart.resize();
+  renderWeeklySummary();
+}
+
 function switchToWeightPage() {
   document.getElementById('weightPage').style.display = 'flex';
+  document.getElementById('dashboardPage').style.display = 'none';
   document.getElementById('resellingPage').style.display = 'none';
   document.querySelector('.main').style.display = 'none';
   document.getElementById('pastDateBanner').style.display = 'none';
@@ -1293,6 +1314,7 @@ function switchToWeightPage() {
 function switchToOverview() {
   document.getElementById('weightPage').style.display = 'none';
   document.getElementById('resellingPage').style.display = 'none';
+  document.getElementById('dashboardPage').style.display = 'none';
   document.querySelector('.main').style.display = '';
   updateDateDisplay();
 }
@@ -1561,6 +1583,7 @@ function renderWeightWidget() {
 function switchToReselling() {
   document.getElementById('resellingPage').style.display = 'flex';
   document.getElementById('weightPage').style.display = 'none';
+  document.getElementById('dashboardPage').style.display = 'none';
   document.querySelector('.main').style.display = 'none';
   document.getElementById('pastDateBanner').style.display = 'none';
   const dateInput = document.getElementById('resellingDatePurchased');

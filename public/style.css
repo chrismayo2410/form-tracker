@@ -434,3 +434,24 @@
     .reselling-page .grid-2,
     .reselling-page .grid-3 { grid-template-columns: 1fr; }
   }
+
+  /* OVERVIEW PROGRESS SUMMARY */
+  .overview-progress { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .ov-progress-row { margin-bottom: 18px; }
+  .ov-progress-row:last-child { margin-bottom: 0; }
+  .ov-progress-info { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .ov-progress-label { font-size: 0.88rem; font-weight: 500; }
+  .ov-progress-count { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+  .ov-bar-track { height: 8px; background: var(--border2); border-radius: 8px; overflow: hidden; }
+  .ov-bar-fill { height: 100%; border-radius: 8px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
+  .ov-bar-kcal { background: #4ade80; }
+  .ov-bar-protein { background: #60a5fa; }
+
+  /* OVERVIEW BOTTOM GRID */
+  .overview-bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 1000px) { .overview-bottom-grid { grid-template-columns: 1fr; } }
+
+  /* DASHBOARD PAGE */
+  .dashboard-page { display: flex; flex-direction: column; gap: 1.5rem; padding: 1.5rem; flex: 1; overflow-y: auto; }
+  .dashboard-page::-webkit-scrollbar { width: 4px; }
+  .dashboard-page::-webkit-scrollbar-thumb { background: var(--border2); }

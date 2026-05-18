@@ -30,6 +30,7 @@
   <div class="left-nav-logo">FORM<span>.</span></div>
   <ul class="left-nav-links">
     <li class="left-nav-link active" onclick="switchToOverview();setNavActive(this)">🏠 <span>Overview</span></li>
+    <li class="left-nav-link" id="navDashboard" onclick="switchToDashboard();setNavActive(this)">📊 <span>Dashboard</span></li>
     <li class="left-nav-link" onclick="switchTab('food');setNavActive(this)">🍽️ <span>Food</span></li>
     <li class="left-nav-link" onclick="switchTab('steps');setNavActive(this)">👟 <span>Steps</span></li>
     <li class="left-nav-link" onclick="switchTab('targets');setNavActive(this)">🎯 <span>Targets</span></li>
@@ -139,15 +140,6 @@
           <div id="templatePills"></div>
         </div>
       </div>
-
-      <div class="ai-section">
-        <div class="section-title">AI nutrition analysis</div>
-        <div class="ai-loading" id="aiLoading">
-          <div class="dot-pulse"><span></span><span></span><span></span></div>
-          <span>Analysing...</span>
-        </div>
-        <div class="ai-response" id="aiResponse"></div>
-      </div>
     </div>
 
     <!-- STEPS TAB -->
@@ -250,7 +242,7 @@
 
   </div>
 
-  <!-- CONTENT: DASHBOARD -->
+  <!-- CONTENT: OVERVIEW -->
   <div class="content">
 
     <!-- STATS ROW -->
@@ -293,134 +285,170 @@
       </div>
     </div>
 
-    <!-- MACRO BARS + STEPS -->
-    <div class="mid-grid">
-      <div class="macro-section">
-        <div class="section-title">Macros today</div>
-        <div class="macro-donut-layout">
-          <div class="macro-donut-canvas-wrap">
-            <canvas id="macroDonutCanvas"></canvas>
-          </div>
-          <div class="macro-donut-legend">
-            <div class="macro-legend-item">
-              <div class="macro-legend-dot" style="background:#9ee8a0;"></div>
-              <div class="macro-legend-info">
-                <div class="macro-legend-name">Protein</div>
-                <div class="macro-legend-val" id="pNums">0 / 180g</div>
-              </div>
-            </div>
-            <div class="macro-legend-item">
-              <div class="macro-legend-dot" style="background:var(--accent2);"></div>
-              <div class="macro-legend-info">
-                <div class="macro-legend-name">Carbs</div>
-                <div class="macro-legend-val" id="cNums">0 / 235g</div>
-              </div>
-            </div>
-            <div class="macro-legend-item">
-              <div class="macro-legend-dot" style="background:var(--accent3);"></div>
-              <div class="macro-legend-info">
-                <div class="macro-legend-name">Fat</div>
-                <div class="macro-legend-val" id="fNums">0 / 70g</div>
-              </div>
-            </div>
-            <div class="macro-legend-item">
-              <div class="macro-legend-dot" style="background:var(--accent);"></div>
-              <div class="macro-legend-info">
-                <div class="macro-legend-name">Calories</div>
-                <div class="macro-legend-val" id="kNums">0 / 2350</div>
-              </div>
-            </div>
-          </div>
+    <!-- PROGRESS SUMMARY -->
+    <div class="overview-progress">
+      <div class="section-title">Today's progress</div>
+      <div class="ov-progress-row">
+        <div class="ov-progress-info">
+          <span class="ov-progress-label">Calories</span>
+          <span class="ov-progress-count" id="ovKcalCount">0 / 2350 kcal</span>
         </div>
-        <div class="targets" id="remainingTargets" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-          <div class="target-line"><span>Remaining calories</span><span class="target-val" id="remKcal">2350</span></div>
-          <div class="target-line"><span>Remaining protein</span><span class="target-val" id="remP">180g</span></div>
-        </div>
+        <div class="ov-bar-track"><div class="ov-bar-fill ov-bar-kcal" id="ovKcalBar"></div></div>
       </div>
-
-      <div class="right-col">
-        <div class="steps-section">
-          <div class="section-title">Steps</div>
-          <div class="steps-big" id="stepsBig">—</div>
-          <div class="steps-target">Target: <span id="stepsTargetDisp">8,000</span> steps</div>
-          <div class="steps-bar"><div class="steps-fill" id="stepsFill" style="width:0%;"></div></div>
+      <div class="ov-progress-row">
+        <div class="ov-progress-info">
+          <span class="ov-progress-label">Protein</span>
+          <span class="ov-progress-count" id="ovProteinCount">0 / 180g</span>
         </div>
-
-        <div class="macro-section">
-          <div class="section-title">Today's session</div>
-          <div id="workoutDisplay" class="workout-display-val">Rest</div>
-          <div id="activityNotesDisplay" class="workout-notes-val"></div>
-        </div>
-
-        <div class="macro-section">
-          <div class="tgt-panel-hdr">
-            <div class="section-title" style="margin-bottom:0;">Daily targets</div>
-            <button class="edit-tgt-btn" onclick="goToTargets()">Edit →</button>
-          </div>
-          <div class="tgt-summary">
-            <div class="tgt-row">
-              <span class="tgt-emoji">🔥</span>
-              <span class="tgt-name">Calories</span>
-              <span class="tgt-val" id="tpKcal">2350 kcal</span>
-            </div>
-            <div class="tgt-row">
-              <span class="tgt-emoji">💪</span>
-              <span class="tgt-name">Protein</span>
-              <span class="tgt-val" id="tpProtein">180 g</span>
-            </div>
-            <div class="tgt-row">
-              <span class="tgt-emoji">👟</span>
-              <span class="tgt-name">Steps</span>
-              <span class="tgt-val" id="tpSteps">8,000</span>
-            </div>
-            <div class="tgt-row">
-              <span class="tgt-emoji">😴</span>
-              <span class="tgt-name">Sleep</span>
-              <span class="tgt-val" id="tpSleep">8 h</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- WEIGHT WIDGET -->
-        <div class="macro-section" id="weightWidget">
-          <div class="sc-header" style="margin-bottom:10px;">
-            <span class="sc-label">Weight</span>
-            <span class="sc-icon">⚖️</span>
-          </div>
-          <div id="weightWidgetContent"></div>
-        </div>
+        <div class="ov-bar-track"><div class="ov-bar-fill ov-bar-protein" id="ovProteinBar"></div></div>
       </div>
-    </div><!-- end mid-grid -->
-
-    <!-- WEEKLY SUMMARY -->
-    <div class="weekly-section">
-      <div class="weekly-header">
-        <div class="section-title">7-day overview</div>
-        <div class="wtoggle-group">
-          <button class="wtoggle active" data-metric="kcal" onclick="setWeeklyMetric('kcal', this)">Calories</button>
-          <button class="wtoggle" data-metric="protein" onclick="setWeeklyMetric('protein', this)">Protein</button>
-          <button class="wtoggle" data-metric="steps" onclick="setWeeklyMetric('steps', this)">Steps</button>
-        </div>
-      </div>
-      <div class="chart-area" id="weeklyChartArea"></div>
-      <div class="weekly-avgs" id="weeklyAvgs"></div>
     </div>
 
-    <!-- FOOD LOG -->
-    <div class="food-log">
-      <div class="food-log-header">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div class="section-title" style="margin-bottom:0;">Food log</div>
-          <button onclick="clearLog()" style="background:none;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;cursor:pointer;padding:4px 8px;border-radius:4px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">clear all</button>
-        </div>
-        <div id="mealTags" style="margin-top:8px;"></div>
+    <!-- SESSION + WEIGHT WIDGET -->
+    <div class="overview-bottom-grid">
+      <div class="macro-section">
+        <div class="section-title">Today's session</div>
+        <div id="workoutDisplay" class="workout-display-val">Rest</div>
+        <div id="activityNotesDisplay" class="workout-notes-val"></div>
       </div>
-      <div class="food-entries" id="foodEntries">
-        <div class="empty-state">No food logged yet — add something above</div>
+
+      <div class="macro-section" id="weightWidget">
+        <div class="sc-header" style="margin-bottom:10px;">
+          <span class="sc-label">Weight</span>
+          <span class="sc-icon">⚖️</span>
+        </div>
+        <div id="weightWidgetContent"></div>
       </div>
     </div>
 
   </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="dashboardPage" class="dashboard-page" style="display:none;">
+
+  <!-- MID GRID: Macros + Steps/Targets -->
+  <div class="mid-grid">
+    <div class="macro-section">
+      <div class="section-title">Macros today</div>
+      <div class="macro-donut-layout">
+        <div class="macro-donut-canvas-wrap">
+          <canvas id="macroDonutCanvas"></canvas>
+        </div>
+        <div class="macro-donut-legend">
+          <div class="macro-legend-item">
+            <div class="macro-legend-dot" style="background:#9ee8a0;"></div>
+            <div class="macro-legend-info">
+              <div class="macro-legend-name">Protein</div>
+              <div class="macro-legend-val" id="pNums">0 / 180g</div>
+            </div>
+          </div>
+          <div class="macro-legend-item">
+            <div class="macro-legend-dot" style="background:var(--accent2);"></div>
+            <div class="macro-legend-info">
+              <div class="macro-legend-name">Carbs</div>
+              <div class="macro-legend-val" id="cNums">0 / 235g</div>
+            </div>
+          </div>
+          <div class="macro-legend-item">
+            <div class="macro-legend-dot" style="background:var(--accent3);"></div>
+            <div class="macro-legend-info">
+              <div class="macro-legend-name">Fat</div>
+              <div class="macro-legend-val" id="fNums">0 / 70g</div>
+            </div>
+          </div>
+          <div class="macro-legend-item">
+            <div class="macro-legend-dot" style="background:var(--accent);"></div>
+            <div class="macro-legend-info">
+              <div class="macro-legend-name">Calories</div>
+              <div class="macro-legend-val" id="kNums">0 / 2350</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="targets" id="remainingTargets" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <div class="target-line"><span>Remaining calories</span><span class="target-val" id="remKcal">2350</span></div>
+        <div class="target-line"><span>Remaining protein</span><span class="target-val" id="remP">180g</span></div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="steps-section">
+        <div class="section-title">Steps</div>
+        <div class="steps-big" id="stepsBig">—</div>
+        <div class="steps-target">Target: <span id="stepsTargetDisp">8,000</span> steps</div>
+        <div class="steps-bar"><div class="steps-fill" id="stepsFill" style="width:0%;"></div></div>
+      </div>
+
+      <div class="macro-section">
+        <div class="tgt-panel-hdr">
+          <div class="section-title" style="margin-bottom:0;">Daily targets</div>
+          <button class="edit-tgt-btn" onclick="goToTargets()">Edit →</button>
+        </div>
+        <div class="tgt-summary">
+          <div class="tgt-row">
+            <span class="tgt-emoji">🔥</span>
+            <span class="tgt-name">Calories</span>
+            <span class="tgt-val" id="tpKcal">2350 kcal</span>
+          </div>
+          <div class="tgt-row">
+            <span class="tgt-emoji">💪</span>
+            <span class="tgt-name">Protein</span>
+            <span class="tgt-val" id="tpProtein">180 g</span>
+          </div>
+          <div class="tgt-row">
+            <span class="tgt-emoji">👟</span>
+            <span class="tgt-name">Steps</span>
+            <span class="tgt-val" id="tpSteps">8,000</span>
+          </div>
+          <div class="tgt-row">
+            <span class="tgt-emoji">😴</span>
+            <span class="tgt-name">Sleep</span>
+            <span class="tgt-val" id="tpSleep">8 h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI NUTRITION ANALYSIS -->
+  <div class="ai-section">
+    <div class="section-title">AI nutrition analysis</div>
+    <div class="ai-loading" id="aiLoading">
+      <div class="dot-pulse"><span></span><span></span><span></span></div>
+      <span>Analysing...</span>
+    </div>
+    <div class="ai-response" id="aiResponse"></div>
+  </div>
+
+  <!-- WEEKLY SUMMARY -->
+  <div class="weekly-section">
+    <div class="weekly-header">
+      <div class="section-title">7-day overview</div>
+      <div class="wtoggle-group">
+        <button class="wtoggle active" data-metric="kcal" onclick="setWeeklyMetric('kcal', this)">Calories</button>
+        <button class="wtoggle" data-metric="protein" onclick="setWeeklyMetric('protein', this)">Protein</button>
+        <button class="wtoggle" data-metric="steps" onclick="setWeeklyMetric('steps', this)">Steps</button>
+      </div>
+    </div>
+    <div class="chart-area" id="weeklyChartArea"></div>
+    <div class="weekly-avgs" id="weeklyAvgs"></div>
+  </div>
+
+  <!-- FOOD LOG -->
+  <div class="food-log">
+    <div class="food-log-header">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="section-title" style="margin-bottom:0;">Food log</div>
+        <button onclick="clearLog()" style="background:none;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;cursor:pointer;padding:4px 8px;border-radius:4px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">clear all</button>
+      </div>
+      <div id="mealTags" style="margin-top:8px;"></div>
+    </div>
+    <div class="food-entries" id="foodEntries">
+      <div class="empty-state">No food logged yet — add something above</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- WEIGHT PAGE -->
