@@ -1578,6 +1578,81 @@ function renderWeightWidget() {
   }
 }
 
+// ── eBay OAuth connection ─────────────────────────────────────────────────────
+
+function initEbayConnection() {
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get('ebayAccessToken');
+  const urlRefresh = params.get('ebayRefreshToken');
+
+  if (urlToken) {
+    localStorage.setItem('ebayAccessToken', urlToken);
+    if (urlRefresh) localStorage.setItem('ebayRefreshToken', urlRefresh);
+    localStorage.setItem('ebayConnectedAt', new Date().toISOString());
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  renderEbayConnectionCard();
+}
+
+function renderEbayConnectionCard() {
+  const card = document.getElementById('ebayConnectCard');
+  if (!card) return;
+
+  const token = localStorage.getItem('ebayAccessToken');
+
+  if (!token) {
+    card.innerHTML = `
+      <div class="ebay-connect-disconnected">
+        <div class="ebay-logo-placeholder">
+          <span class="ebay-logo-e">e</span><span class="ebay-logo-b">b</span><span class="ebay-logo-a">a</span><span class="ebay-logo-y">y</span>
+        </div>
+        <div class="ebay-connect-msg">Connect your eBay account to sync listings automatically</div>
+        <button class="ebay-connect-btn" onclick="connectEbay()">Connect eBay</button>
+      </div>`;
+  } else {
+    const connectedAt = localStorage.getItem('ebayConnectedAt');
+    let syncedText = 'Last synced: never';
+    if (connectedAt) {
+      const d = new Date(connectedAt);
+      syncedText = 'Connected ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        + ' at ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+    card.innerHTML = `
+      <div class="ebay-connect-connected">
+        <div class="ebay-connect-info">
+          <div class="ebay-connect-dot"></div>
+          <div class="ebay-connect-details">
+            <div class="ebay-connect-name">eBay Account</div>
+            <div class="ebay-connect-synced">${syncedText}</div>
+          </div>
+        </div>
+        <button class="ebay-disconnect-btn" onclick="disconnectEbay()">Disconnect</button>
+      </div>`;
+  }
+}
+
+async function connectEbay() {
+  try {
+    const res = await fetch('/api/ebay-auth');
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('Failed to generate eBay authorisation URL.');
+    }
+  } catch(e) {
+    alert('Could not reach the eBay auth endpoint.');
+  }
+}
+
+function disconnectEbay() {
+  localStorage.removeItem('ebayAccessToken');
+  localStorage.removeItem('ebayRefreshToken');
+  localStorage.removeItem('ebayConnectedAt');
+  renderEbayConnectionCard();
+}
+
 // ── Reselling tracker ─────────────────────────────────────────────────────────
 
 function switchToReselling() {
@@ -1590,6 +1665,7 @@ function switchToReselling() {
   if (dateInput && !dateInput.value) dateInput.value = todayDateStr();
   const feesToggle = document.getElementById('ebayFeesToggle');
   if (feesToggle) feesToggle.checked = localStorage.getItem('ebayFeesToggle') === 'true';
+  renderEbayConnectionCard();
   renderResellingInventory();
 }
 
@@ -1950,4 +2026,5 @@ updateDateDisplay();
 loadState();
 initTemplates();
 populateProgressDropdown();
+initEbayConnection();
 renderWeightWidget();
