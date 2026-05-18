@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   const clientId = process.env.EBAY_CLIENT_ID;
   const clientSecret = process.env.EBAY_CLIENT_SECRET;
-  const redirectUri = 'https://your-vercel-url.vercel.app/api/ebay-callback';
+  const redirectUri = 'https://form-tracker-chi.vercel.app/api/ebay-callback';
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
   try {
